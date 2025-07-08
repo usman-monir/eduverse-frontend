@@ -12,13 +12,13 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import RegisterStudent from "./pages/RegisterStudent";
 import RegisterTutor from "./pages/RegisterTutor";
-import Dashboard from "./pages/Dashboard";
+import StudentDashboard from "./pages/StudentDashboard";
 import TutorDashboard from "./pages/TutorDashboard";
 import StudyMaterials from "./pages/StudyMaterials";
 import BookClass from "./pages/BookClass";
 import RequestSlot from "./pages/RequestSlot";
 import Messages from "./pages/Messages";
-import Admin from "./pages/Admin";
+import AdminDashboard from "./pages/AdminDashboard";
 import AdminSessions from "./pages/AdminSessions";
 import AdminCourses from "./pages/AdminCourses";
 import AdminUsers from "./pages/AdminUsers";
@@ -64,7 +64,7 @@ const AppRoutes = () => {
         path="/dashboard" 
         element={
           <ProtectedRoute requireRole="student">
-            <Dashboard />
+            <StudentDashboard />
           </ProtectedRoute>
         } 
       />
@@ -132,7 +132,7 @@ const AppRoutes = () => {
         path="/admin" 
         element={
           <ProtectedRoute requireRole="admin">
-            <Admin />
+            <AdminDashboard />
           </ProtectedRoute>
         } 
       />

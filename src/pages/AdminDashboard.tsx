@@ -8,7 +8,7 @@ import DashboardLayout from '@/components/Layout/DashboardLayout';
 import { Users, Calendar, BookOpen, TrendingUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-const Admin = () => {
+const AdminDashboard = () => {
   const totalSessions = mockClassSessions.length;
   const bookedSessions = mockClassSessions.filter(s => s.status === 'booked').length;
   const availableSessions = mockClassSessions.filter(s => s.status === 'available').length;
@@ -160,4 +160,4 @@ const Admin = () => {
   );
 };
 
-export default Admin;
+export default AdminDashboard;

@@ -1,0 +1,117 @@
+import axios from 'axios';
+
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api',
+});
+
+// Add interceptor to attach token from localStorage
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token && config.headers) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+export const registerStudent = async (data: {
+  name: string;
+  email: string;
+  password: string;
+  phone: string;
+  grade: string;
+  subjects: string[];
+}) => {
+  return api.post('/auth/register', {
+    ...data,
+    role: 'student',
+  });
+};
+
+export const registerTutor = async (data: {
+  name: string;
+  email: string;
+  password: string;
+  phone: string;
+  subjects: string[];
+  experience: string;
+  qualifications: string;
+}) => {
+  return api.post('/auth/register', {
+    ...data,
+    role: 'tutor',
+  });
+};
+
+export const login = async (email: string, password: string) => {
+  return api.post('/auth/login', { email, password });
+};
+
+export const getProfile = async () => {
+  return api.get('/auth/me');
+};
+
+export const getStudyMaterials = async () => {
+  return api.get('/study-materials');
+};
+
+// Session APIs
+export const getSessions = async (params: any = {}) => {
+  return api.get('/sessions', { params });
+};
+
+export const getSessionById = async (sessionId: string) => {
+  return api.get(`/sessions/${sessionId}`);
+};
+
+export const createSession = async (data: any) => {
+  return api.post('/sessions', data);
+};
+
+export const updateSession = async (sessionId: string, data: any) => {
+  return api.put(`/sessions/${sessionId}`, data);
+};
+
+export const bookSession = async (sessionId: string, data: any) => {
+  return api.put(`/sessions/${sessionId}/book`, data);
+};
+
+export const updateSessionStatus = async (
+  sessionId: string,
+  status: string
+) => {
+  return api.put(`/sessions/${sessionId}/status`, { status });
+};
+
+export const deleteSession = async (sessionId: string) => {
+  return api.delete(`/sessions/${sessionId}`);
+};
+
+// Slot Request APIs
+export const getSlotRequests = async (params: any = {}) => {
+  return api.get('/slot-requests', { params });
+};
+
+export const getSlotRequestById = async (requestId: string) => {
+  return api.get(`/slot-requests/${requestId}`);
+};
+
+export const createSlotRequest = async (data: any) => {
+  return api.post('/slot-requests', data);
+};
+
+export const updateSlotRequestStatus = async (
+  requestId: string,
+  status: string,
+  assignedTutorId?: string
+) => {
+  return api.put(`/slot-requests/${requestId}/status`, {
+    status,
+    assignedTutorId,
+  });
+};
+
+export const deleteSlotRequest = async (requestId: string) => {
+  return api.delete(`/slot-requests/${requestId}`);
+};
+
+export default api;

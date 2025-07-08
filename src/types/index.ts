@@ -1,10 +1,12 @@
-
 export interface User {
   id: string;
   name: string;
   email: string;
   role: 'student' | 'tutor' | 'admin';
   avatar: string;
+  phone?: string;
+  grade?: string;
+  subjects?: string[];
 }
 
 export interface StudyMaterial {

@@ -1,55 +1,89 @@
-
 import { useState, useEffect } from 'react';
 import { ClassSession } from '@/types';
-import { mockClassSessions } from '@/data/mockData';
+import {
+  getSessions,
+  createSession,
+  updateSession as apiUpdateSession,
+  deleteSession,
+  getSessionById as apiGetSessionById,
+} from '@/services/api';
 
 export const useSessionManager = () => {
-  const [sessions, setSessions] = useState<ClassSession[]>(mockClassSessions);
+  const [sessions, setSessions] = useState<ClassSession[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Load sessions from localStorage on mount
+  // Fetch sessions from backend on mount
   useEffect(() => {
-    const savedSessions = localStorage.getItem('classSessions');
-    if (savedSessions) {
-      setSessions(JSON.parse(savedSessions));
-    }
+    fetchSessions();
+    // eslint-disable-next-line
   }, []);
 
-  // Save sessions to localStorage whenever sessions change
-  useEffect(() => {
-    localStorage.setItem('classSessions', JSON.stringify(sessions));
-  }, [sessions]);
-
-  const addSession = (sessionData: Omit<ClassSession, 'id'>) => {
-    const newSession: ClassSession = {
-      ...sessionData,
-      id: Date.now().toString(),
-      meetingLink: `https://meet.google.com/new`, // Auto-generate meeting link
-    };
-    setSessions(prev => [...prev, newSession]);
-    return newSession;
+  const fetchSessions = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await getSessions();
+      const sessionsRaw = res.data.data || [];
+      // Normalize tutor field to always be a string (tutor name)
+      const sessions = sessionsRaw.map((s: any) => ({
+        ...s,
+        tutor: s.tutor?.name || s.tutorName || 'Admin',
+        date: s.date ? s.date.slice(0, 10) : '',
+      }));
+      setSessions(sessions);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to fetch sessions');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const updateSession = (id: string, updates: Partial<ClassSession>) => {
-    setSessions(prev => 
-      prev.map(session => 
-        session.id === id ? { ...session, ...updates } : session
-      )
-    );
+  const addSession = async (sessionData: Omit<ClassSession, 'id'>) => {
+    try {
+      await createSession(sessionData);
+      await fetchSessions();
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to create session');
+    }
   };
 
-  const deleteSession = (id: string) => {
-    setSessions(prev => prev.filter(session => session.id !== id));
+  const updateSession = async (id: string, updates: Partial<ClassSession>) => {
+    try {
+      await apiUpdateSession(id, updates);
+      await fetchSessions();
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to update session');
+    }
   };
 
-  const getSessionById = (id: string) => {
-    return sessions.find(session => session.id === id);
+  const deleteSessionById = async (id: string) => {
+    try {
+      await deleteSession(id);
+      await fetchSessions();
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to delete session');
+    }
+  };
+
+  const getSessionById = async (id: string) => {
+    try {
+      const res = await apiGetSessionById(id);
+      return res.data.data;
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to fetch session');
+      return null;
+    }
   };
 
   return {
     sessions,
+    loading,
+    error,
+    fetchSessions,
     addSession,
     updateSession,
-    deleteSession,
-    getSessionById
+    deleteSession: deleteSessionById,
+    getSessionById,
   };
 };
