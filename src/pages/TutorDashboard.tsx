@@ -251,45 +251,6 @@ const TutorDashboard = () => {
             </div>
           </CardContent>
         </Card>
-
-        {/* Quick Actions */}
-        <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
-          <Link to='/tutor/sessions'>
-            <Card className='hover:shadow-md transition-shadow cursor-pointer'>
-              <CardContent className='p-6 text-center'>
-                <Calendar className='h-12 w-12 mx-auto mb-4 text-blue-600' />
-                <h3 className='font-semibold'>Manage Sessions</h3>
-                <p className='text-sm text-gray-600 mt-2'>
-                  View and manage your teaching sessions
-                </p>
-              </CardContent>
-            </Card>
-          </Link>
-
-          <Link to='/messages'>
-            <Card className='hover:shadow-md transition-shadow cursor-pointer'>
-              <CardContent className='p-6 text-center'>
-                <Users className='h-12 w-12 mx-auto mb-4 text-green-600' />
-                <h3 className='font-semibold'>Messages</h3>
-                <p className='text-sm text-gray-600 mt-2'>
-                  Communicate with your students
-                </p>
-              </CardContent>
-            </Card>
-          </Link>
-
-          <Link to='/tutor/courses'>
-            <Card className='hover:shadow-md transition-shadow cursor-pointer'>
-              <CardContent className='p-6 text-center'>
-                <BookOpen className='h-12 w-12 mx-auto mb-4 text-purple-600' />
-                <h3 className='font-semibold'>Course Materials</h3>
-                <p className='text-sm text-gray-600 mt-2'>
-                  Manage your course materials and content
-                </p>
-              </CardContent>
-            </Card>
-          </Link>
-        </div>
       </div>
     </DashboardLayout>
   );
