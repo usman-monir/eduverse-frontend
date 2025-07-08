@@ -219,7 +219,9 @@ const AdminSessions = () => {
                       <div className='flex items-center space-x-4 text-sm text-gray-600'>
                         <span className='flex items-center'>
                           <User className='h-4 w-4 mr-1' />
-                          {session.tutor}
+                          {typeof session.tutor === 'string'
+                            ? session.tutor
+                            : (session.tutor as any)?.name}
                         </span>
                         <span className='flex items-center'>
                           <Calendar className='h-4 w-4 mr-1' />

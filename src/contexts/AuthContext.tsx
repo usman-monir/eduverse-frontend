@@ -25,13 +25,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Fetch user profile if token exists
   React.useEffect(() => {
     const token = localStorage.getItem('token');
+    console.log('AuthContext: token on mount:', token);
     if (token) {
       getProfile()
         .then((res) => {
+          console.log('AuthContext: profile response', res.data);
           setUser(res.data.data);
           setLoading(false);
         })
-        .catch(() => {
+        .catch((err) => {
+          console.log('AuthContext: profile error', err);
           setUser(null);
           localStorage.removeItem('token');
           setLoading(false);

@@ -1,31 +1,30 @@
-
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import ProtectedRoute from "@/components/ProtectedRoute";
+import { Toaster } from '@/components/ui/toaster';
+import { Toaster as Sonner } from '@/components/ui/sonner';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
 // Pages
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import RegisterStudent from "./pages/RegisterStudent";
-import RegisterTutor from "./pages/RegisterTutor";
-import StudentDashboard from "./pages/StudentDashboard";
-import TutorDashboard from "./pages/TutorDashboard";
-import StudyMaterials from "./pages/StudyMaterials";
-import BookClass from "./pages/BookClass";
-import RequestSlot from "./pages/RequestSlot";
-import Messages from "./pages/Messages";
-import AdminDashboard from "./pages/AdminDashboard";
-import AdminSessions from "./pages/AdminSessions";
-import AdminCourses from "./pages/AdminCourses";
-import AdminUsers from "./pages/AdminUsers";
-import AdminStudents from "./pages/AdminStudents";
-import AdminSlotRequests from "./pages/AdminSlotRequests";
-import WhatsAppAutomation from "./pages/WhatsAppAutomation";
-import NotFound from "./pages/NotFound";
+import Login from './pages/Login';
+import Register from './pages/Register';
+import RegisterStudent from './pages/RegisterStudent';
+import RegisterTutor from './pages/RegisterTutor';
+import StudentDashboard from './pages/StudentDashboard';
+import TutorDashboard from './pages/TutorDashboard';
+import StudyMaterials from './pages/StudyMaterials';
+import BookClass from './pages/BookClass';
+import RequestSlot from './pages/RequestSlot';
+import Messages from './pages/Messages';
+import AdminDashboard from './pages/AdminDashboard';
+import AdminSessions from './pages/AdminSessions';
+import AdminCourses from './pages/AdminCourses';
+import AdminUsers from './pages/AdminUsers';
+import AdminStudents from './pages/AdminStudents';
+import AdminSlotRequests from './pages/AdminSlotRequests';
+import WhatsAppAutomation from './pages/WhatsAppAutomation';
+import NotFound from './pages/NotFound';
 
 const queryClient = new QueryClient();
 
@@ -33,168 +32,188 @@ const AppRoutes = () => {
   const { isAuthenticated, user } = useAuth();
 
   const getDefaultRoute = () => {
-    if (!user) return "/login";
-    if (user.role === 'admin') return "/admin";
-    if (user.role === 'tutor') return "/tutor-dashboard";
-    return "/dashboard";
+    if (!user) return '/login';
+    if (user.role === 'admin') return '/admin-dashboard';
+    if (user.role === 'tutor') return '/tutor-dashboard';
+    if (user.role === 'student') return '/student-dashboard';
+    return '/login';
   };
 
   return (
     <Routes>
       {/* Public Routes */}
-      <Route 
-        path="/login" 
-        element={!isAuthenticated ? <Login /> : <Navigate to={getDefaultRoute()} replace />} 
-      />
-      <Route 
-        path="/register" 
-        element={!isAuthenticated ? <Register /> : <Navigate to={getDefaultRoute()} replace />} 
-      />
-      <Route 
-        path="/register/student" 
-        element={!isAuthenticated ? <RegisterStudent /> : <Navigate to={getDefaultRoute()} replace />} 
-      />
-      <Route 
-        path="/register/tutor" 
-        element={!isAuthenticated ? <RegisterTutor /> : <Navigate to={getDefaultRoute()} replace />} 
-      />
-      
-      {/* Student Routes */}
-      <Route 
-        path="/dashboard" 
+      <Route
+        path='/login'
         element={
-          <ProtectedRoute requireRole="student">
+          !isAuthenticated ? (
+            <Login />
+          ) : (
+            <Navigate to={getDefaultRoute()} replace />
+          )
+        }
+      />
+      <Route
+        path='/register'
+        element={
+          !isAuthenticated ? (
+            <Register />
+          ) : (
+            <Navigate to={getDefaultRoute()} replace />
+          )
+        }
+      />
+      <Route
+        path='/register/student'
+        element={
+          !isAuthenticated ? (
+            <RegisterStudent />
+          ) : (
+            <Navigate to={getDefaultRoute()} replace />
+          )
+        }
+      />
+      <Route
+        path='/register/tutor'
+        element={
+          !isAuthenticated ? (
+            <RegisterTutor />
+          ) : (
+            <Navigate to={getDefaultRoute()} replace />
+          )
+        }
+      />
+
+      {/* Student Routes */}
+      <Route
+        path='/student-dashboard'
+        element={
+          <ProtectedRoute requireRole='student'>
             <StudentDashboard />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/study-materials" 
+      <Route
+        path='/study-materials'
         element={
-          <ProtectedRoute requireRole="student">
+          <ProtectedRoute requireRole='student'>
             <StudyMaterials />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/book-class" 
+      <Route
+        path='/book-class'
         element={
-          <ProtectedRoute requireRole="student">
+          <ProtectedRoute requireRole='student'>
             <BookClass />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/request-slot" 
+      <Route
+        path='/request-slot'
         element={
-          <ProtectedRoute requireRole="student">
+          <ProtectedRoute requireRole='student'>
             <RequestSlot />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/messages" 
+      <Route
+        path='/messages'
         element={
           <ProtectedRoute>
             <Messages />
           </ProtectedRoute>
-        } 
+        }
       />
-      
+
       {/* Tutor Routes */}
-      <Route 
-        path="/tutor-dashboard" 
+      <Route
+        path='/tutor-dashboard'
         element={
-          <ProtectedRoute requireRole="tutor">
+          <ProtectedRoute requireRole='tutor'>
             <TutorDashboard />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/tutor/sessions" 
+      <Route
+        path='/tutor/sessions'
         element={
-          <ProtectedRoute requireRole="tutor">
+          <ProtectedRoute requireRole='tutor'>
             <AdminSessions />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/tutor/courses" 
+      <Route
+        path='/tutor/courses'
         element={
-          <ProtectedRoute requireRole="tutor">
+          <ProtectedRoute requireRole='tutor'>
             <AdminCourses />
           </ProtectedRoute>
-        } 
+        }
       />
-      
+
       {/* Admin Routes */}
-      <Route 
-        path="/admin" 
+      <Route
+        path='/admin-dashboard'
         element={
-          <ProtectedRoute requireRole="admin">
+          <ProtectedRoute requireRole='admin'>
             <AdminDashboard />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/sessions" 
+      <Route
+        path='/admin/sessions'
         element={
-          <ProtectedRoute requireRole="admin">
+          <ProtectedRoute requireRole='admin'>
             <AdminSessions />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/courses" 
+      <Route
+        path='/admin/courses'
         element={
-          <ProtectedRoute requireRole="admin">
+          <ProtectedRoute requireRole='admin'>
             <AdminCourses />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/users" 
+      <Route
+        path='/admin/users'
         element={
-          <ProtectedRoute requireRole="admin">
+          <ProtectedRoute requireRole='admin'>
             <AdminUsers />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/students" 
+      <Route
+        path='/admin/students'
         element={
-          <ProtectedRoute requireRole="admin">
+          <ProtectedRoute requireRole='admin'>
             <AdminStudents />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/slot-requests" 
+      <Route
+        path='/admin/slot-requests'
         element={
-          <ProtectedRoute requireRole="admin">
+          <ProtectedRoute requireRole='admin'>
             <AdminSlotRequests />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/whatsapp" 
+      <Route
+        path='/admin/whatsapp'
         element={
-          <ProtectedRoute requireRole="admin">
+          <ProtectedRoute requireRole='admin'>
             <WhatsAppAutomation />
           </ProtectedRoute>
-        } 
+        }
       />
-      
+
       {/* Default redirect */}
-      <Route 
-        path="/" 
-        element={
-          <Navigate to={getDefaultRoute()} replace />
-        } 
-      />
-      
-      {/* 404 */}
-      <Route path="*" element={<NotFound />} />
+      <Route path='/' element={<Navigate to={getDefaultRoute()} replace />} />
+
+      {/* 404 - NotFound must always be public and last */}
+      <Route path='*' element={<NotFound />} />
     </Routes>
   );
 };

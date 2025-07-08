@@ -144,7 +144,12 @@ const StudentDashboard = () => {
               <div className='flex items-center justify-between'>
                 <div>
                   <h3 className='font-semibold text-lg'>{nextClass.subject}</h3>
-                  <p className='text-gray-600'>with {nextClass.tutor}</p>
+                  <p className='text-gray-600'>
+                    with{' '}
+                    {typeof nextClass.tutor === 'string'
+                      ? nextClass.tutor
+                      : (nextClass.tutor as any)?.name}
+                  </p>
                   <div className='flex items-center space-x-4 mt-2 text-sm text-gray-500'>
                     <span>📅 {nextClass.date}</span>
                     <span>🕐 {nextClass.time}</span>
