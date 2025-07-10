@@ -114,4 +114,29 @@ export const deleteSlotRequest = async (requestId: string) => {
   return api.delete(`/slot-requests/${requestId}`);
 };
 
+// WhatsApp Templates APIs
+export const getWhatsAppTemplates = async () => {
+  return api.get('/whatsapp/templates');
+};
+
+export const updateWhatsAppTemplate = async (id: string, data: any) => {
+  return api.put(`/whatsapp/templates/${id}`, data);
+};
+
+export const createWhatsAppTemplate = async (data: any) => {
+  return api.post('/whatsapp/templates', data);
+};
+
+export const deleteWhatsAppTemplate = async (id: string) => {
+  return api.delete(`/whatsapp/templates/${id}`);
+};
+
+export const getAdminUsers = async (params: any = {}) => {
+  return api.get('/admin/users', { params });
+};
+
+export const getAdminUserById = async (id: string) => {
+  return api.get(`/admin/users/${id}`);
+};
+
 export default api;

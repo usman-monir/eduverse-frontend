@@ -25,10 +25,14 @@ export const useSessionManager = () => {
     try {
       const res = await getSessions();
       const sessionsRaw = res.data.data || [];
-      // Normalize tutor field to always be a string (tutor name)
+      // Normalize tutor and studentId to always be strings, and add id field
       const sessions = sessionsRaw.map((s: any) => ({
         ...s,
-        tutor: s.tutor?.name || s.tutorName || 'Admin',
+        id: s._id,
+        tutor: s.tutor?.name || s.tutorName || (typeof s.tutor === 'string' ? s.tutor : ''),
+        tutorObj: s.tutor,
+        studentId: s.studentId?._id || (typeof s.studentId === 'string' ? s.studentId : ''),
+        studentObj: s.studentId,
         date: s.date ? s.date.slice(0, 10) : '',
       }));
       setSessions(sessions);

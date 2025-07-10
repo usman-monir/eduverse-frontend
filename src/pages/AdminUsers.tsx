@@ -12,6 +12,9 @@ import DashboardLayout from '@/components/Layout/DashboardLayout';
 import { UserPlus, Mail, Users, GraduationCap } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useToast } from '@/hooks/use-toast';
+import { getAdminUsers } from '@/services/api';
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 interface InviteForm {
   name: string;
@@ -33,33 +36,32 @@ const AdminUsers = () => {
     }
   });
 
-  // Mock users data
-  const mockUsers = [
-    {
-      id: '1',
-      name: 'John Smith',
-      email: 'john@student.com',
-      role: 'student',
-      status: 'active',
-      joinedDate: '2024-01-15'
-    },
-    {
-      id: '2',
-      name: 'Dr. Sarah Wilson',
-      email: 'sarah@tutor.com',
-      role: 'tutor',
-      status: 'active',
-      joinedDate: '2024-01-10'
-    },
-    {
-      id: '3',
-      name: 'Mike Johnson',
-      email: 'mike@student.com',
-      role: 'student',
-      status: 'pending',
-      joinedDate: '2024-03-01'
-    }
-  ];
+  const [tab, setTab] = useState<'student' | 'tutor'>('student');
+  const [students, setStudents] = useState<any[]>([]);
+  const [tutors, setTutors] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      setLoading(true);
+      try {
+        const [studentsRes, tutorsRes] = await Promise.all([
+          getAdminUsers({ role: 'student', limit: 100 }),
+          getAdminUsers({ role: 'tutor', limit: 100 }),
+        ]);
+        setStudents(studentsRes.data.data || []);
+        setTutors(tutorsRes.data.data || []);
+      } catch (err) {
+        // Optionally handle error
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUsers();
+  }, []);
+
+  const users = tab === 'student' ? students : tutors;
 
   const generatePassword = () => {
     const password = Math.random().toString(36).slice(-8);
@@ -222,7 +224,7 @@ const AdminUsers = () => {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{mockUsers.length}</div>
+              <div className="text-2xl font-bold">{students.length + tutors.length}</div>
               <p className="text-xs text-muted-foreground">Registered users</p>
             </CardContent>
           </Card>
@@ -233,9 +235,7 @@ const AdminUsers = () => {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-blue-600">
-                {mockUsers.filter(u => u.role === 'student').length}
-              </div>
+              <div className="text-2xl font-bold text-blue-600">{students.length}</div>
               <p className="text-xs text-muted-foreground">Active students</p>
             </CardContent>
           </Card>
@@ -246,46 +246,67 @@ const AdminUsers = () => {
               <GraduationCap className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">
-                {mockUsers.filter(u => u.role === 'tutor').length}
-              </div>
+              <div className="text-2xl font-bold text-green-600">{tutors.length}</div>
               <p className="text-xs text-muted-foreground">Active tutors</p>
             </CardContent>
           </Card>
         </div>
 
+        {/* Tabs for Students and Tutors */}
+        <div className="flex space-x-4 border-b mb-4">
+          <button
+            className={`px-4 py-2 font-medium ${tab === 'student' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-600'}`}
+            onClick={() => setTab('student')}
+          >
+            Students
+          </button>
+          <button
+            className={`px-4 py-2 font-medium ${tab === 'tutor' ? 'border-b-2 border-green-600 text-green-600' : 'text-gray-600'}`}
+            onClick={() => setTab('tutor')}
+          >
+            Tutors
+          </button>
+        </div>
+
         {/* Users List */}
         <Card>
           <CardHeader>
-            <CardTitle>All Users</CardTitle>
-            <CardDescription>Manage registered tutors and students</CardDescription>
+            <CardTitle>{tab === 'student' ? 'Students' : 'Tutors'}</CardTitle>
+            <CardDescription>Manage registered {tab === 'student' ? 'students' : 'tutors'}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {mockUsers.map((user) => (
-                <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                      {getRoleIcon(user.role)}
+            {loading ? (
+              <div className="text-center py-8 text-gray-500">Loading users...</div>
+            ) : (
+              <div className="space-y-4">
+                {users.map((user) => (
+                  <div key={user._id} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+                        {getRoleIcon(user.role)}
+                      </div>
+                      <div>
+                        <h3 className="font-semibold">{user.name}</h3>
+                        <p className="text-sm text-gray-600">{user.email}</p>
+                        <p className="text-xs text-gray-500">Joined: {user.joinedDate ? new Date(user.joinedDate).toLocaleDateString() : ''}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="font-semibold">{user.name}</h3>
-                      <p className="text-sm text-gray-600">{user.email}</p>
-                      <p className="text-xs text-gray-500">Joined: {user.joinedDate}</p>
+                    <div className="flex items-center space-x-3">
+                      <Badge variant="outline" className="capitalize">
+                        {user.role}
+                      </Badge>
+                      {getStatusBadge(user.status)}
+                      <Button variant="outline" size="sm" onClick={() => navigate(`/admin/users/${user._id}`)}>
+                        View Profile
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-3">
-                    <Badge variant="outline" className="capitalize">
-                      {user.role}
-                    </Badge>
-                    {getStatusBadge(user.status)}
-                    <Button variant="outline" size="sm">
-                      Edit
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+                {users.length === 0 && (
+                  <div className="text-center text-gray-500 py-8">No users found.</div>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

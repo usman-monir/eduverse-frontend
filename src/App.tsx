@@ -21,10 +21,10 @@ import AdminDashboard from './pages/AdminDashboard';
 import AdminSessions from './pages/AdminSessions';
 import AdminCourses from './pages/AdminCourses';
 import AdminUsers from './pages/AdminUsers';
-import AdminStudents from './pages/AdminStudents';
 import AdminSlotRequests from './pages/AdminSlotRequests';
 import WhatsAppAutomation from './pages/WhatsAppAutomation';
 import NotFound from './pages/NotFound';
+import AdminUserProfile from './pages/AdminUserProfile';
 
 const queryClient = new QueryClient();
 
@@ -185,10 +185,10 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path='/admin/students'
+        path='/admin/users/:id'
         element={
           <ProtectedRoute requireRole='admin'>
-            <AdminStudents />
+            <AdminUserProfile />
           </ProtectedRoute>
         }
       />

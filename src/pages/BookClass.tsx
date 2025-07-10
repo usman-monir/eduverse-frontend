@@ -41,7 +41,7 @@ const BookClass = () => {
   const [error, setError] = useState<string | null>(null);
 
   const subjects = [...new Set(sessions.map((session) => session.subject))];
-  const tutors = [...new Set(sessions.map((session) => session.tutor))];
+  const tutors = [...new Set(sessions.map((session) => session.tutorName || session.tutor))];
 
   const filteredSessions = sessions.filter((session) => {
     const sessionDate = new Date(session.date);
@@ -51,7 +51,7 @@ const BookClass = () => {
     const matchesSubject =
       selectedSubject === 'all' || session.subject === selectedSubject;
     const matchesTutor =
-      selectedTutor === 'all' || session.tutor === selectedTutor;
+      selectedTutor === 'all' || (session.tutorName || session.tutor) === selectedTutor;
     return (
       matchesDate &&
       matchesSubject &&
@@ -83,9 +83,8 @@ const BookClass = () => {
     setLoading(true);
     setError(null);
     try {
-      const token = localStorage.getItem('token') || '';
-      const res = await getSessions(token);
-      setSessions(res.data.data || []);
+      const res = await getSessions();
+      setSessions(res.data.data || []); // rely on useSessionManager for normalization
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to fetch sessions');
     } finally {
@@ -278,7 +277,7 @@ const BookClass = () => {
                             <div className='flex items-center space-x-4 text-sm text-gray-600'>
                               <span className='flex items-center space-x-1'>
                                 <User className='h-4 w-4' />
-                                <span>{session.tutor}</span>
+                                <span>{session.tutorName || session.tutor}</span>
                               </span>
                               <span className='flex items-center space-x-1'>
                                 <Clock className='h-4 w-4' />
@@ -307,7 +306,7 @@ const BookClass = () => {
                                     {session.subject}
                                   </h4>
                                   <p className='text-sm text-gray-600'>
-                                    Tutor: {session.tutor}
+                                    Tutor: {session.tutorName || session.tutor}
                                   </p>
                                   <p className='text-sm text-gray-600'>
                                     Date: {session.date}

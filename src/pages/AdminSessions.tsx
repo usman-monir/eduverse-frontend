@@ -211,7 +211,7 @@ const AdminSessions = () => {
               {filteredSessions?.length > 0 ? (
                 filteredSessions?.map((session) => (
                   <div
-                    key={session.id || (session as any)._id}
+                    key={session.id}
                     className='flex items-center justify-between p-4 border rounded-lg'
                   >
                     <div className='space-y-1 flex-1'>
@@ -219,9 +219,7 @@ const AdminSessions = () => {
                       <div className='flex items-center space-x-4 text-sm text-gray-600'>
                         <span className='flex items-center'>
                           <User className='h-4 w-4 mr-1' />
-                          {typeof session.tutor === 'string'
-                            ? session.tutor
-                            : (session.tutor as any)?.name}
+                          {session.tutor}
                         </span>
                         <span className='flex items-center'>
                           <Calendar className='h-4 w-4 mr-1' />
@@ -262,11 +260,7 @@ const AdminSessions = () => {
                     <div className='flex items-center space-x-2'>
                       {getStatusBadge(session.status)}
                       <Dialog
-                        open={
-                          (editingSession?.id ??
-                            (editingSession as any)?._id) ===
-                          (session.id ?? (session as any)._id)
-                        }
+                        open={editingSession?.id === session.id}
                         onOpenChange={(open) => {
                           if (!open) setEditingSession(null);
                         }}
@@ -276,12 +270,7 @@ const AdminSessions = () => {
                             variant='outline'
                             size='sm'
                             onClick={() => {
-                              if (
-                                !editingSession ||
-                                (editingSession.id ??
-                                  (editingSession as any)._id) !==
-                                  (session.id ?? (session as any)._id)
-                              )
+                              if (!editingSession || editingSession.id !== session.id)
                                 setEditingSession(session);
                             }}
                           >
@@ -320,9 +309,7 @@ const AdminSessions = () => {
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
                             <AlertDialogAction
                               onClick={() =>
-                                handleDeleteSession(
-                                  session.id || (session as any)._id
-                                )
+                                handleDeleteSession(session.id)
                               }
                             >
                               Delete
