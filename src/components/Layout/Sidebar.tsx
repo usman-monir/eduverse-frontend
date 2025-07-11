@@ -46,13 +46,13 @@ const Sidebar = () => {
   const tutorNavItems = [
     { path: '/tutor-dashboard', label: 'Dashboard', icon: Home },
     { path: '/tutor/sessions', label: 'Sessions', icon: Calendar },
-    { path: '/tutor/courses', label: 'Study Material', icon: BookOpen },
+    { path: '/tutor/study-materials', label: 'Study Materials', icon: BookOpen },
   ];
 
   const adminNavItems = [
     { path: '/admin-dashboard', label: 'Dashboard', icon: Home },
     { path: '/admin/sessions', label: 'Sessions', icon: Calendar },
-    { path: '/admin/courses', label: 'Study Material', icon: BookOpen },
+    { path: '/admin/study-materials', label: 'Study Material', icon: BookOpen },
     { path: '/admin/users', label: 'Users', icon: Users },
     {
       path: '/admin/slot-requests',

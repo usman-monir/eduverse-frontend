@@ -50,8 +50,30 @@ export const getProfile = async () => {
   return api.get('/auth/me');
 };
 
-export const getStudyMaterials = async () => {
-  return api.get('/study-materials');
+export const getStudyMaterials = async (params: any = {}) => {
+  return api.get('/study-materials', { params });
+};
+
+export const getStudyMaterialById = async (id: string) => {
+  return api.get(`/study-materials/${id}`);
+};
+
+export const uploadStudyMaterial = async (formData: FormData) => {
+  return api.post('/study-materials', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+};
+
+export const getStudyMaterialCollections = async () => {
+  return api.get('/study-materials/collections');
+};
+
+export const updateStudyMaterial = async (id: string, data: any) => {
+  return api.put(`/study-materials/${id}`, data);
+};
+
+export const deleteStudyMaterial = async (id: string) => {
+  return api.delete(`/study-materials/${id}`);
 };
 
 // Session APIs

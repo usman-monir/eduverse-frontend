@@ -19,7 +19,6 @@ import RequestSlot from './pages/RequestSlot';
 import Messages from './pages/Messages';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminSessions from './pages/AdminSessions';
-import AdminCourses from './pages/AdminCourses';
 import AdminUsers from './pages/AdminUsers';
 import AdminSlotRequests from './pages/AdminSlotRequests';
 import WhatsAppAutomation from './pages/WhatsAppAutomation';
@@ -95,7 +94,23 @@ const AppRoutes = () => {
       <Route
         path='/study-materials'
         element={
-          <ProtectedRoute requireRole='student'>
+          <ProtectedRoute>
+            <StudyMaterials />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path='/admin/study-materials'
+        element={
+          <ProtectedRoute requireRole='admin'>
+            <StudyMaterials />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path='/tutor/study-materials'
+        element={
+          <ProtectedRoute requireRole='tutor'>
             <StudyMaterials />
           </ProtectedRoute>
         }
@@ -142,15 +157,6 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
-      <Route
-        path='/tutor/courses'
-        element={
-          <ProtectedRoute requireRole='tutor'>
-            <AdminCourses />
-          </ProtectedRoute>
-        }
-      />
-
       {/* Admin Routes */}
       <Route
         path='/admin-dashboard'
@@ -165,14 +171,6 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute requireRole='admin'>
             <AdminSessions />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path='/admin/courses'
-        element={
-          <ProtectedRoute requireRole='admin'>
-            <AdminCourses />
           </ProtectedRoute>
         }
       />
