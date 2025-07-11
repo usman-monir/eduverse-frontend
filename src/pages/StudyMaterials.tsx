@@ -91,7 +91,7 @@ function StudyMaterialUploadDialog({ open, onClose, onUploaded, collections }: {
           </div>
           <div>
             <Label>File *</Label>
-            <Input type='file' accept='.pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png' onChange={e => setFile(e.target.files?.[0] || null)} required />
+            <Input type='file' accept='.pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.mp4,.webm,.ogg' onChange={e => setFile(e.target.files?.[0] || null)} required />
           </div>
           <div>
             <Label>Collection *</Label>
