@@ -192,13 +192,9 @@ const StudentDashboard = () => {
                   <div className='space-y-4'>
                     <div className='text-sm text-gray-600'>
                       <p>📚 {material.subject}</p>
-                      <p>👨‍🏫 {material.uploadedBy}</p>
+                      <p>👨‍🏫 Uploaded by: {material.uploadedBy?.name || material.uploadedByName || '-'}</p>
                       <p>📅 {material.uploadedAt}</p>
                     </div>
-
-                    <Button className='w-full' disabled>
-                      View Material
-                    </Button>
                   </div>
                 </CardContent>
               </Card>

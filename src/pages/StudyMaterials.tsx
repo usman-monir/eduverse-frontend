@@ -127,6 +127,9 @@ function StudyMaterialViewer({ open, onClose, material, user }: { open: boolean;
   const viewerRef = useRef<HTMLDivElement>(null);
   const [numPages, setNumPages] = React.useState<number>(0);
 
+  // Watermark text: viewer email + uploader name/email
+  const watermarkText = `Viewer: ${user?.email || ''} \nUploaded by: ${material.uploadedBy?.name || material.uploadedByName || material.uploadedBy?.email || ''}`;
+
   // Prevent right-click, print, and selection
   React.useEffect(() => {
     const handleContextMenu = (e: MouseEvent) => {
@@ -163,12 +166,22 @@ function StudyMaterialViewer({ open, onClose, material, user }: { open: boolean;
         </DialogHeader>
         <div
           ref={viewerRef}
-          className="relative bg-gray-100 rounded shadow overflow-auto max-h-[70vh] flex flex-col items-center justify-start select-none"
+          className='relative bg-gray-100 rounded shadow overflow-auto max-h-[70vh] flex flex-col items-center justify-start select-none'
           style={{ userSelect: 'none' }}
         >
-          {/* Watermark overlay */}
-          <div className='pointer-events-none select-none absolute inset-0 flex items-center justify-center opacity-20 text-2xl font-bold text-gray-500' style={{zIndex:2}}>
-            {user?.name || 'Eduverse'} • Protected
+          {/* Dynamic Watermark overlay */}
+          <div
+            className="pointer-events-none select-none fixed top-4 left-1/2 -translate-x-1/2 opacity-40 text-2xl font-bold text-gray-700"
+            style={{
+              zIndex: 9999,
+              animation: 'watermark-move 4s linear infinite alternate',
+              whiteSpace: 'pre',
+              transform: 'translateX(0%) rotate(-20deg)',
+              pointerEvents: 'none',
+              userSelect: 'none',
+            }}
+          >
+            {watermarkText}
           </div>
           {/* File rendering */}
           {isPDF && (
@@ -183,7 +196,7 @@ function StudyMaterialViewer({ open, onClose, material, user }: { open: boolean;
                   <Page
                     key={`page_${index + 1}`}
                     pageNumber={index + 1}
-                    width={Math.min(700, window.innerWidth - 100)} // Responsive width
+                    width={900}
                     renderTextLayer={false}
                     renderAnnotationLayer={false}
                   />
@@ -204,6 +217,12 @@ function StudyMaterialViewer({ open, onClose, material, user }: { open: boolean;
         <div className='text-xs text-gray-500 mt-2'>
           Downloading, printing, copying, and screenshots are discouraged. Content is protected.
         </div>
+        <style>{`
+          @keyframes watermark-move {
+            0% { top: 10%; left: 5%; }
+            100% { top: 60%; left: 40%; }
+          }
+        `}</style>
       </DialogContent>
     </Dialog>
   );
