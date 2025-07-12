@@ -21,7 +21,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
 import DashboardLayout from '@/components/Layout/DashboardLayout';
 import { Calendar as CalendarIcon, Clock, User, Send } from 'lucide-react';
-import { createSlotRequest } from '@/services/api';
+import { createSlotRequest, getAllTutorsWithSubjects } from '@/services/api';
 
 const RequestSlot = () => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(
@@ -33,24 +33,9 @@ const RequestSlot = () => {
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
-
-  const tutors = [
-    'Dr. Smith',
-    'Prof. Johnson',
-    'Dr. Wilson',
-    'Ms. Davis',
-    'Mr. Brown',
-  ];
-
-  const subjects = [
-    'Mathematics',
-    'Physics',
-    'Chemistry',
-    'Biology',
-    'Computer Science',
-    'English',
-    'History',
-  ];
+  const [tutors, setTutors] = useState<any[]>([]);
+  const [subjects, setSubjects] = useState<string[]>([]);
+  const [selectedTutorObj, setSelectedTutorObj] = useState<any | null>(null);
 
   const timeSlots = [
     '09:00',
@@ -66,6 +51,40 @@ const RequestSlot = () => {
   ];
 
   const durations = ['30 minutes', '1 hour', '1.5 hours', '2 hours'];
+
+  React.useEffect(() => {
+    const fetchTutors = async () => {
+      try {
+        const res = await getAllTutorsWithSubjects();
+        setTutors(res.data.data || []);
+      } catch {
+        setTutors([]);
+      }
+    };
+    fetchTutors();
+  }, []);
+
+  // Update subjects when selectedTutor changes
+  React.useEffect(() => {
+    if (!selectedTutor) {
+      setSubjects([]);
+      setSelectedTutorObj(null);
+      setSubject('');
+      return;
+    }
+    const tutor = tutors.find((t) => t.email === selectedTutor);
+    setSelectedTutorObj(tutor || null);
+    if (tutor && Array.isArray(tutor.subjects)) {
+      setSubjects(tutor.subjects);
+      // If current subject is not in new list, clear it
+      if (!tutor.subjects.includes(subject)) {
+        setSubject('');
+      }
+    } else {
+      setSubjects([]);
+      setSubject('');
+    }
+  }, [selectedTutor, tutors]);
 
   const handleSubmitRequest = async () => {
     if (
@@ -150,8 +169,9 @@ const RequestSlot = () => {
                     </SelectTrigger>
                     <SelectContent>
                       {tutors.map((tutor) => (
-                        <SelectItem key={tutor} value={tutor}>
-                          {tutor}
+                        <SelectItem key={tutor.email} value={tutor.email}>
+                          {tutor.name} ({tutor.email})
+                          {tutor.experience ? ` — ${tutor.experience}` : ''}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -160,9 +180,9 @@ const RequestSlot = () => {
 
                 <div>
                   <Label htmlFor='subject'>Subject *</Label>
-                  <Select value={subject} onValueChange={setSubject}>
+                  <Select value={subject} onValueChange={setSubject} disabled={!selectedTutor}>
                     <SelectTrigger>
-                      <SelectValue placeholder='Select subject' />
+                      <SelectValue placeholder={selectedTutor ? 'Select subject' : 'Select a tutor first'} />
                     </SelectTrigger>
                     <SelectContent>
                       {subjects.map((subj) => (

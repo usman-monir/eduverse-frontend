@@ -161,4 +161,8 @@ export const getAdminUserById = async (id: string) => {
   return api.get(`/admin/users/${id}`);
 };
 
+export const getAllTutorsWithSubjects = async () => {
+  return api.get('/admin/tutors');
+};
+
 export default api;

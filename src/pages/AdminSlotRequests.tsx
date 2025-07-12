@@ -1,106 +1,133 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
 import DashboardLayout from '@/components/Layout/DashboardLayout';
-import { Calendar, Clock, User, CheckCircle, XCircle, Eye } from 'lucide-react';
+import { Calendar, Clock, User, CheckCircle, XCircle, Eye, Loader2 } from 'lucide-react';
+import { getSlotRequests, updateSlotRequestStatus } from '@/services/api';
 
 interface SlotRequest {
-  id: string;
+  _id: string;
+  studentId: {
+    _id: string;
+    name: string;
+    email: string;
+    phone?: string;
+  };
   studentName: string;
-  studentEmail: string;
-  tutor: string;
   subject: string;
-  date: string;
-  time: string;
+  preferredDate: string;
+  preferredTime: string;
   duration: string;
-  message: string;
-  status: 'pending' | 'approved' | 'rejected';
-  submittedAt: string;
+  description: string;
+  status: 'pending' | 'approved' | 'rejected' | 'completed';
+  requestedTutor?: {
+    _id: string;
+    name: string;
+    email: string;
+    phone?: string;
+  };
+  requestedTutorName?: string;
+  assignedTutor?: {
+    _id: string;
+    name: string;
+    email: string;
+    phone?: string;
+  };
+  assignedTutorName?: string;
+  requestedAt: string;
+  approvedAt?: string;
+  rejectedAt?: string;
+  rejectionReason?: string;
 }
 
 const AdminSlotRequests = () => {
   const [selectedRequest, setSelectedRequest] = useState<SlotRequest | null>(null);
-  
-  // Mock data for slot requests
-  const [requests, setRequests] = useState<SlotRequest[]>([
-    {
-      id: '1',
-      studentName: 'John Doe',
-      studentEmail: 'john.doe@email.com',
-      tutor: 'Dr. Smith',
-      subject: 'Mathematics',
-      date: '2024-07-10',
-      time: '14:00',
-      duration: '1 hour',
-      message: 'Need help with calculus problems',
-      status: 'pending',
-      submittedAt: '2024-07-04 09:30'
-    },
-    {
-      id: '2',
-      studentName: 'Jane Smith',
-      studentEmail: 'jane.smith@email.com',
-      tutor: 'Prof. Johnson',
-      subject: 'Physics',
-      date: '2024-07-12',
-      time: '10:00',
-      duration: '1.5 hours',
-      message: 'Preparing for upcoming exam',
-      status: 'pending',
-      submittedAt: '2024-07-04 11:15'
-    },
-    {
-      id: '3',
-      studentName: 'Mike Wilson',
-      studentEmail: 'mike.wilson@email.com',
-      tutor: 'Dr. Wilson',
-      subject: 'Chemistry',
-      date: '2024-07-08',
-      time: '16:00',
-      duration: '2 hours',
-      message: 'Organic chemistry concepts',
-      status: 'approved',
-      submittedAt: '2024-07-03 14:20'
+  const [requests, setRequests] = useState<SlotRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchRequests();
+  }, []);
+
+  const fetchRequests = async () => {
+    try {
+      setLoading(true);
+      const response = await getSlotRequests();
+      setRequests(response.data.data || []);
+    } catch (error: any) {
+      console.error('Error fetching requests:', error);
+      toast({
+        title: 'Error',
+        description: error.response?.data?.message || 'Failed to fetch slot requests',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
     }
-  ]);
-
-  const pendingRequests = requests.filter(req => req.status === 'pending');
-  const approvedRequests = requests.filter(req => req.status === 'approved');
-  const rejectedRequests = requests.filter(req => req.status === 'rejected');
-
-  const handleApproveRequest = (requestId: string) => {
-    setRequests(prev => 
-      prev.map(req => 
-        req.id === requestId 
-          ? { ...req, status: 'approved' as const }
-          : req
-      )
-    );
-    
-    toast({
-      title: "Request approved!",
-      description: "Student will receive confirmation email with meeting link.",
-    });
   };
 
-  const handleRejectRequest = (requestId: string) => {
-    setRequests(prev => 
-      prev.map(req => 
-        req.id === requestId 
-          ? { ...req, status: 'rejected' as const }
-          : req
-      )
-    );
-    
-    toast({
-      title: "Request rejected",
-      description: "Student will be notified about the rejection.",
-      variant: "destructive"
-    });
+  const handleApproveRequest = async (requestId: string) => {
+    try {
+      setUpdating(requestId);
+      await updateSlotRequestStatus(requestId, 'approved');
+      
+      // Update local state
+      setRequests(prev => 
+        prev.map(req => 
+          req._id === requestId 
+            ? { ...req, status: 'approved' as const, approvedAt: new Date().toISOString() }
+            : req
+        )
+      );
+      
+      toast({
+        title: "Request approved!",
+        description: "Student will receive confirmation email with meeting link.",
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.response?.data?.message || 'Failed to approve request',
+        variant: 'destructive',
+      });
+    } finally {
+      setUpdating(null);
+    }
+  };
+
+  const handleRejectRequest = async (requestId: string) => {
+    try {
+      setUpdating(requestId);
+      await updateSlotRequestStatus(requestId, 'rejected');
+      
+      // Update local state
+      setRequests(prev => 
+        prev.map(req => 
+          req._id === requestId 
+            ? { ...req, status: 'rejected' as const, rejectedAt: new Date().toISOString() }
+            : req
+        )
+      );
+      
+      toast({
+        title: "Request rejected",
+        description: "Student will be notified about the rejection.",
+        variant: "destructive"
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.response?.data?.message || 'Failed to reject request',
+        variant: 'destructive',
+      });
+    } finally {
+      setUpdating(null);
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -111,17 +138,27 @@ const AdminSlotRequests = () => {
         return <Badge className="bg-green-100 text-green-800">Approved</Badge>;
       case 'rejected':
         return <Badge className="bg-red-100 text-red-800">Rejected</Badge>;
+      case 'completed':
+        return <Badge className="bg-blue-100 text-blue-800">Completed</Badge>;
       default:
         return null;
     }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString();
+  };
+
+  const formatDateTime = (dateString: string) => {
+    return new Date(dateString).toLocaleString();
   };
 
   const RequestCard = ({ request }: { request: SlotRequest }) => (
     <div className="border rounded-lg p-4 hover:shadow-md transition-shadow">
       <div className="flex items-center justify-between mb-3">
         <div>
-          <h3 className="font-semibold text-lg">{request.studentName}</h3>
-          <p className="text-sm text-gray-600">{request.studentEmail}</p>
+          <h3 className="font-semibold text-lg">{request.studentId?.name || request.studentName}</h3>
+          <p className="text-sm text-gray-600">{request.studentId?.email}</p>
         </div>
         {getStatusBadge(request.status)}
       </div>
@@ -130,17 +167,17 @@ const AdminSlotRequests = () => {
         <div className="space-y-1">
           <div className="flex items-center space-x-1">
             <User className="h-4 w-4 text-gray-500" />
-            <span>{request.tutor}</span>
+            <span>{request.requestedTutor?.name || request.requestedTutorName || 'Not specified'}</span>
           </div>
           <div className="flex items-center space-x-1">
             <Calendar className="h-4 w-4 text-gray-500" />
-            <span>{request.date}</span>
+            <span>{formatDate(request.preferredDate)}</span>
           </div>
         </div>
         <div className="space-y-1">
           <div className="flex items-center space-x-1">
             <Clock className="h-4 w-4 text-gray-500" />
-            <span>{request.time}</span>
+            <span>{request.preferredTime}</span>
           </div>
           <p className="text-gray-600">{request.subject}</p>
         </div>
@@ -148,7 +185,7 @@ const AdminSlotRequests = () => {
 
       <div className="flex items-center justify-between">
         <span className="text-xs text-gray-500">
-          Submitted: {request.submittedAt}
+          Submitted: {formatDateTime(request.requestedAt)}
         </span>
         
         <div className="flex space-x-2">
@@ -171,8 +208,11 @@ const AdminSlotRequests = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="text-sm font-medium text-gray-500">Student</label>
-                      <p className="font-semibold">{selectedRequest.studentName}</p>
-                      <p className="text-sm text-gray-600">{selectedRequest.studentEmail}</p>
+                      <p className="font-semibold">{selectedRequest.studentId?.name || selectedRequest.studentName}</p>
+                      <p className="text-sm text-gray-600">{selectedRequest.studentId?.email}</p>
+                      {selectedRequest.studentId?.phone && (
+                        <p className="text-sm text-gray-600">{selectedRequest.studentId.phone}</p>
+                      )}
                     </div>
                     <div>
                       <label className="text-sm font-medium text-gray-500">Status</label>
@@ -182,23 +222,25 @@ const AdminSlotRequests = () => {
                   
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="text-sm font-medium text-gray-500">Tutor</label>
-                      <p>{selectedRequest.tutor}</p>
+                      <label className="text-sm font-medium text-gray-500">Requested Tutor</label>
+                      <p>{selectedRequest.requestedTutor?.name || selectedRequest.requestedTutorName || 'Not specified'}</p>
+                      {selectedRequest.requestedTutor?.email && (
+                        <p className="text-sm text-gray-600">{selectedRequest.requestedTutor.email}</p>
+                      )}
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-500">Subject</label>
-                      <p>{selectedRequest.subject}</p>
+                      <label className="text-sm font-medium text-gray-500">Assigned Tutor</label>
+                      <p>{selectedRequest.assignedTutor?.name || selectedRequest.assignedTutorName || 'Not assigned'}</p>
+                      {selectedRequest.assignedTutor?.email && (
+                        <p className="text-sm text-gray-600">{selectedRequest.assignedTutor.email}</p>
+                      )}
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="text-sm font-medium text-gray-500">Date</label>
-                      <p>{selectedRequest.date}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-500">Time</label>
-                      <p>{selectedRequest.time}</p>
+                      <label className="text-sm font-medium text-gray-500">Subject</label>
+                      <p>{selectedRequest.subject}</p>
                     </div>
                     <div>
                       <label className="text-sm font-medium text-gray-500">Duration</label>
@@ -206,39 +248,60 @@ const AdminSlotRequests = () => {
                     </div>
                   </div>
                   
-                  {selectedRequest.message && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Date</label>
+                      <p>{formatDate(selectedRequest.preferredDate)}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Time</label>
+                      <p>{selectedRequest.preferredTime}</p>
+                    </div>
+                  </div>
+                  
+                  {selectedRequest.description && (
                     <div>
                       <label className="text-sm font-medium text-gray-500">Message</label>
-                      <p className="mt-1 p-3 bg-gray-50 rounded-md">{selectedRequest.message}</p>
+                      <p className="mt-1 p-3 bg-gray-50 rounded-md">{selectedRequest.description}</p>
                     </div>
                   )}
                   
                   <div>
                     <label className="text-sm font-medium text-gray-500">Submitted At</label>
-                    <p>{selectedRequest.submittedAt}</p>
+                    <p>{formatDateTime(selectedRequest.requestedAt)}</p>
                   </div>
 
                   {selectedRequest.status === 'pending' && (
                     <div className="flex space-x-2 pt-4">
                       <Button 
                         onClick={() => {
-                          handleApproveRequest(selectedRequest.id);
+                          handleApproveRequest(selectedRequest._id);
                           setSelectedRequest(null);
                         }}
                         className="flex-1"
+                        disabled={updating === selectedRequest._id}
                       >
-                        <CheckCircle className="h-4 w-4 mr-1" />
+                        {updating === selectedRequest._id ? (
+                          <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                        ) : (
+                          <CheckCircle className="h-4 w-4 mr-1" />
+                        )}
                         Approve
                       </Button>
                       <Button 
                         variant="destructive"
                         onClick={() => {
-                          handleRejectRequest(selectedRequest.id);
+                          handleRejectRequest(selectedRequest._id);
                           setSelectedRequest(null);
                         }}
                         className="flex-1"
+                        disabled={updating === selectedRequest._id}
                       >
-                        <XCircle className="h-4 w-4 mr-1" />
+                        {updating === selectedRequest._id ? (
+                          <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                        ) : (
+                          <XCircle className="h-4 w-4 mr-1" />
+                        )}
                         Reject
                       </Button>
                     </div>
@@ -252,16 +315,26 @@ const AdminSlotRequests = () => {
             <>
               <Button 
                 size="sm" 
-                onClick={() => handleApproveRequest(request.id)}
+                onClick={() => handleApproveRequest(request._id)}
+                disabled={updating === request._id}
               >
-                <CheckCircle className="h-4 w-4" />
+                {updating === request._id ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <CheckCircle className="h-4 w-4" />
+                )}
               </Button>
               <Button 
                 variant="destructive" 
                 size="sm"
-                onClick={() => handleRejectRequest(request.id)}
+                onClick={() => handleRejectRequest(request._id)}
+                disabled={updating === request._id}
               >
-                <XCircle className="h-4 w-4" />
+                {updating === request._id ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <XCircle className="h-4 w-4" />
+                )}
               </Button>
             </>
           )}
@@ -269,6 +342,21 @@ const AdminSlotRequests = () => {
       </div>
     </div>
   );
+
+  const pendingRequests = requests.filter(req => req.status === 'pending');
+  const approvedRequests = requests.filter(req => req.status === 'approved');
+  const rejectedRequests = requests.filter(req => req.status === 'rejected');
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin" />
+          <span className="ml-2">Loading slot requests...</span>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -325,26 +413,11 @@ const AdminSlotRequests = () => {
             <div className="space-y-4">
               {pendingRequests.length > 0 ? (
                 pendingRequests.map(request => (
-                  <RequestCard key={request.id} request={request} />
+                  <RequestCard key={request._id} request={request} />
                 ))
               ) : (
                 <p className="text-gray-500 text-center py-8">No pending requests</p>
               )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Recent Activity */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-            <CardDescription>All slot requests and their current status</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {requests.map(request => (
-                <RequestCard key={request.id} request={request} />
-              ))}
             </div>
           </CardContent>
         </Card>

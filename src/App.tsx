@@ -12,6 +12,7 @@ import Register from './pages/Register';
 import RegisterStudent from './pages/RegisterStudent';
 import RegisterTutor from './pages/RegisterTutor';
 import StudentDashboard from './pages/StudentDashboard';
+import StudentSessions from './pages/StudentSessions';
 import TutorDashboard from './pages/TutorDashboard';
 import StudyMaterials from './pages/StudyMaterials';
 import BookClass from './pages/BookClass';
@@ -88,6 +89,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute requireRole='student'>
             <StudentDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path='/student-sessions'
+        element={
+          <ProtectedRoute requireRole='student'>
+            <StudentSessions />
           </ProtectedRoute>
         }
       />

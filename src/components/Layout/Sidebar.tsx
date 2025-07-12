@@ -38,6 +38,7 @@ const Sidebar = () => {
 
   const studentNavItems = [
     { path: '/student-dashboard', label: 'Dashboard', icon: Home },
+    { path: '/student-sessions', label: 'My Sessions', icon: Calendar },
     { path: '/study-materials', label: 'Study Materials', icon: BookOpen },
     { path: '/book-class', label: 'Book Class', icon: Calendar },
     { path: '/request-slot', label: 'Request Slot', icon: Clock },
