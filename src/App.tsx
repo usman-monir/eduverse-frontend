@@ -15,16 +15,18 @@ import StudentDashboard from './pages/StudentDashboard';
 import StudentSessions from './pages/StudentSessions';
 import TutorDashboard from './pages/TutorDashboard';
 import StudyMaterials from './pages/StudyMaterials';
-import BookClass from './pages/BookClass';
+import BookClass from './pages/BookSession';
 import RequestSlot from './pages/RequestSlot';
 import Messages from './pages/Messages';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminSessions from './pages/AdminSessions';
 import AdminUsers from './pages/AdminUsers';
+import AdminSubjects from './pages/AdminSubjects';
 import AdminSlotRequests from './pages/AdminSlotRequests';
 import WhatsAppAutomation from './pages/WhatsAppAutomation';
 import NotFound from './pages/NotFound';
 import AdminUserProfile from './pages/AdminUserProfile';
+import EmailTest from './pages/EmailTest';
 
 const queryClient = new QueryClient();
 
@@ -212,6 +214,22 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute requireRole='admin'>
             <WhatsAppAutomation />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path='/email-test'
+        element={
+          <ProtectedRoute requireRole='admin'>
+            <EmailTest />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path='/admin/subjects'
+        element={
+          <ProtectedRoute requireRole='admin'>
+            <AdminSubjects />
           </ProtectedRoute>
         }
       />

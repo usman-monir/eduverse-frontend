@@ -40,7 +40,7 @@ const Sidebar = () => {
     { path: '/student-dashboard', label: 'Dashboard', icon: Home },
     { path: '/student-sessions', label: 'My Sessions', icon: Calendar },
     { path: '/study-materials', label: 'Study Materials', icon: BookOpen },
-    { path: '/book-class', label: 'Book Class', icon: Calendar },
+    { path: '/book-class', label: 'Book Session', icon: Calendar },
     { path: '/request-slot', label: 'Request Slot', icon: Clock },
   ];
 
@@ -53,6 +53,7 @@ const Sidebar = () => {
   const adminNavItems = [
     { path: '/admin-dashboard', label: 'Dashboard', icon: Home },
     { path: '/admin/sessions', label: 'Sessions', icon: Calendar },
+    { path: '/admin/subjects', label: 'Subjects', icon: BookOpen },
     { path: '/admin/study-materials', label: 'Study Material', icon: BookOpen },
     { path: '/admin/users', label: 'Users', icon: Users },
     {

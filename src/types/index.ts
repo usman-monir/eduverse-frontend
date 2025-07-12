@@ -9,6 +9,16 @@ export interface User {
   subjects?: string[];
 }
 
+export interface Subject {
+  id: string;
+  name: string;
+  description?: string;
+  category?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface StudyMaterial {
   id: string;
   title: string;
@@ -26,6 +36,7 @@ export interface ClassSession {
   id: string;
   subject: string;
   tutor: string;
+  tutorId?: string;
   date: string;
   time: string;
   duration: string;

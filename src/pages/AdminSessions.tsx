@@ -173,6 +173,7 @@ const AdminSessions = () => {
               <SessionForm
                 onSubmit={handleAddSession}
                 onCancel={() => setIsAddDialogOpen(false)}
+                isAdmin={true}
               />
             </DialogContent>
           </Dialog>
@@ -288,6 +289,7 @@ const AdminSessions = () => {
                             session={session}
                             onSubmit={handleUpdateSession}
                             onCancel={() => setEditingSession(null)}
+                            isAdmin={true}
                           />
                         </DialogContent>
                       </Dialog>

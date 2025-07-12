@@ -807,16 +807,16 @@ const WhatsAppAutomation = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
+            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4'>
               <Card className='bg-blue-50 border-blue-200'>
                 <CardContent className='p-4'>
                   <div className='text-center'>
                     <div className='text-2xl mb-2'>⏰</div>
                     <h3 className='font-semibold text-blue-800'>
-                      Class Reminders
+                      Session Reminders
                     </h3>
                     <p className='text-sm text-blue-600 mt-1'>
-                      1 hour before class
+                      1 hour before session
                     </p>
                     <Badge className='mt-2 bg-green-100 text-green-800'>
                       Active
@@ -825,39 +825,6 @@ const WhatsAppAutomation = () => {
                 </CardContent>
               </Card>
 
-              <Card className='bg-purple-50 border-purple-200'>
-                <CardContent className='p-4'>
-                  <div className='text-center'>
-                    <div className='text-2xl mb-2'>📊</div>
-                    <h3 className='font-semibold text-purple-800'>
-                      Progress Updates
-                    </h3>
-                    <p className='text-sm text-purple-600 mt-1'>
-                      Weekly summary
-                    </p>
-                    <Badge className='mt-2 bg-green-100 text-green-800'>
-                      Active
-                    </Badge>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className='bg-orange-50 border-orange-200'>
-                <CardContent className='p-4'>
-                  <div className='text-center'>
-                    <div className='text-2xl mb-2'>📝</div>
-                    <h3 className='font-semibold text-orange-800'>
-                      Assignment Reminders
-                    </h3>
-                    <p className='text-sm text-orange-600 mt-1'>
-                      24 hours before due
-                    </p>
-                    <Badge className='mt-2 bg-yellow-100 text-yellow-800'>
-                      Paused
-                    </Badge>
-                  </div>
-                </CardContent>
-              </Card>
 
               <Card className='bg-green-50 border-green-200'>
                 <CardContent className='p-4'>

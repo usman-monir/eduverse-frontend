@@ -30,7 +30,7 @@ import DashboardLayout from '@/components/Layout/DashboardLayout';
 import { Calendar as CalendarIcon, Clock, User, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-const BookClass = () => {
+const BookSession = () => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(
     new Date()
   );
@@ -42,6 +42,21 @@ const BookClass = () => {
 
   const subjects = [...new Set(sessions.map((session) => session.subject))];
   const tutors = [...new Set(sessions.map((session) => session.tutorName || session.tutor))];
+
+  // Create a map of dates with available sessions
+  const sessionsByDate = sessions.reduce((acc, session) => {
+    if (session.status === 'available') {
+      const dateKey = new Date(session.date).toDateString();
+      if (!acc[dateKey]) {
+        acc[dateKey] = [];
+      }
+      acc[dateKey].push(session);
+    }
+    return acc;
+  }, {} as Record<string, any[]>);
+
+  // Get dates with available sessions for calendar highlighting
+  const datesWithSessions = Object.keys(sessionsByDate).map(dateStr => new Date(dateStr));
 
   const filteredSessions = sessions.filter((session) => {
     const sessionDate = new Date(session.date);
@@ -60,8 +75,12 @@ const BookClass = () => {
     );
   });
 
-  const handleBookClass = async (sessionId: string) => {
+  const handleBookSession = async (sessionId: string) => {
     try {
+      console.log('Booking session with ID:', sessionId); // Debug log
+      if (!sessionId || sessionId === 'undefined') {
+        throw new Error('Invalid session ID');
+      }
       await bookSession(sessionId, {});
       toast({
         title: 'Class booked successfully!',
@@ -70,10 +89,11 @@ const BookClass = () => {
       // Optionally, refetch sessions to update status
       fetchSessions();
     } catch (err: any) {
+      console.error('Booking error:', err); // Debug log
       toast({
         title: 'Booking failed',
         description:
-          err.response?.data?.message || 'Could not book the session.',
+          err.response?.data?.message || err.message || 'Could not book the session.',
         variant: 'destructive',
       });
     }
@@ -110,6 +130,26 @@ const BookClass = () => {
     }
   };
 
+  // Custom calendar day renderer to show session counts
+  const renderDay = (day: Date) => {
+    const dateKey = day.toDateString();
+    const sessionsForDay = sessionsByDate[dateKey] || [];
+    const sessionCount = sessionsForDay.length;
+
+    return (
+      <div className="relative w-full h-full flex items-center justify-center">
+        <span>{day.getDate()}</span>
+        {sessionCount > 0 && (
+          <div className="absolute -top-1 -right-1">
+            <Badge className="bg-green-500 text-white text-xs px-1 py-0.5 min-w-[18px] h-[18px] flex items-center justify-center">
+              {sessionCount}
+            </Badge>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <DashboardLayout>
@@ -136,7 +176,7 @@ const BookClass = () => {
         {/* Header */}
         <div className='flex items-center justify-between'>
           <div>
-            <h1 className='text-3xl font-bold mb-2'>Book a Class</h1>
+            <h1 className='text-3xl font-bold mb-2'>Book a Session</h1>
             <p className='text-gray-600'>
               Schedule one-on-one sessions with your tutors
             </p>
@@ -152,6 +192,32 @@ const BookClass = () => {
             </Button>
           </Link>
         </div>
+
+        {/* Session Summary */}
+        <Card className='bg-green-50 border-green-200'>
+          <CardContent className='p-4'>
+            <div className='flex items-center justify-between'>
+              <div>
+                <h3 className='font-semibold text-green-800 mb-1'>
+                  📅 Available Sessions Overview
+                </h3>
+                <p className='text-green-700 text-sm'>
+                  {datesWithSessions.length} days with available sessions • {sessions.filter(s => s.status === 'available').length} total sessions
+                </p>
+              </div>
+              <div className='flex items-center space-x-2'>
+                <div className='flex items-center space-x-1'>
+                  <div className='w-3 h-3 bg-green-500 rounded-full'></div>
+                  <span className='text-sm text-green-700'>Available</span>
+                </div>
+                <div className='flex items-center space-x-1'>
+                  <Badge className='bg-green-500 text-white text-xs px-1 py-0.5'>3</Badge>
+                  <span className='text-sm text-green-700'>Session count</span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Info Cards */}
         <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
@@ -187,6 +253,9 @@ const BookClass = () => {
                   <CalendarIcon className='h-5 w-5' />
                   <span>Select Date</span>
                 </CardTitle>
+                <CardDescription>
+                  Dates with green dots have available sessions
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <Calendar
@@ -194,7 +263,28 @@ const BookClass = () => {
                   selected={selectedDate}
                   onSelect={setSelectedDate}
                   className='rounded-md border'
+                  modifiers={{
+                    hasSessions: datesWithSessions,
+                  }}
+                  modifiersStyles={{
+                    hasSessions: {
+                      backgroundColor: '#dcfce7',
+                      color: '#166534',
+                      fontWeight: 'bold',
+                    },
+                  }}
                 />
+                
+                {/* Session summary for selected date */}
+                {selectedDate && sessionsByDate[selectedDate.toDateString()] && (
+                  <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-md">
+                    <p className="text-sm text-green-700">
+                      <span className="font-semibold">
+                        {sessionsByDate[selectedDate.toDateString()].length} session(s)
+                      </span> available on {selectedDate.toLocaleDateString()}
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -264,11 +354,16 @@ const BookClass = () => {
               <CardContent>
                 {filteredSessions.length > 0 ? (
                   <div className='space-y-4'>
-                    {filteredSessions.map((session) => (
-                      <div
-                        key={session.id}
-                        className='border rounded-lg p-4 hover:shadow-md transition-shadow'
-                      >
+                    {filteredSessions.map((session) => {
+                      console.log('Session object:', session); // Debug log
+                      const sessionId = session.id || session._id;
+                      console.log('Session ID:', sessionId); // Debug log
+                      
+                      return (
+                        <div
+                          key={sessionId}
+                          className='border rounded-lg p-4 hover:shadow-md transition-shadow'
+                        >
                         <div className='flex items-center justify-between'>
                           <div className='space-y-2'>
                             <h3 className='font-semibold text-lg'>
@@ -321,7 +416,7 @@ const BookClass = () => {
                                 <div className='flex space-x-2'>
                                   <Button
                                     className='flex-1'
-                                    onClick={() => handleBookClass(session.id)}
+                                    onClick={() => handleBookSession(sessionId)}
                                   >
                                     Confirm Booking
                                   </Button>
@@ -334,7 +429,8 @@ const BookClass = () => {
                           </Dialog>
                         </div>
                       </div>
-                    ))}
+                    );
+                    })}
                   </div>
                 ) : (
                   <div className='text-center py-12'>
@@ -384,4 +480,4 @@ const BookClass = () => {
   );
 };
 
-export default BookClass;
+export default BookSession;

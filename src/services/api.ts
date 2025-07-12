@@ -108,6 +108,10 @@ export const deleteSession = async (sessionId: string) => {
   return api.delete(`/sessions/${sessionId}`);
 };
 
+export const getAvailableTutors = async () => {
+  return api.get('/sessions/tutors/available');
+};
+
 // Slot Request APIs
 export const getSlotRequests = async (params: any = {}) => {
   return api.get('/slot-requests', { params });
@@ -163,6 +167,44 @@ export const getAdminUserById = async (id: string) => {
 
 export const getAllTutorsWithSubjects = async () => {
   return api.get('/admin/tutors');
+};
+
+export const approveUser = async (userId: string) => {
+  return api.put(`/admin/users/${userId}/approve`);
+};
+
+// Subject APIs
+export const getSubjects = async (params?: any) => {
+  return api.get('/subjects', { params });
+};
+
+export const getSubjectById = async (id: string) => {
+  return api.get(`/subjects/${id}`);
+};
+
+export const createSubject = async (data: {
+  name: string;
+  description?: string;
+  category?: string;
+}) => {
+  return api.post('/subjects', data);
+};
+
+export const updateSubject = async (id: string, data: {
+  name?: string;
+  description?: string;
+  category?: string;
+  isActive?: boolean;
+}) => {
+  return api.put(`/subjects/${id}`, data);
+};
+
+export const deleteSubject = async (id: string) => {
+  return api.delete(`/subjects/${id}`);
+};
+
+export const toggleSubjectStatus = async (id: string) => {
+  return api.put(`/subjects/${id}/toggle`);
 };
 
 export default api;

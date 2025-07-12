@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -11,9 +11,11 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
 import { BookOpen } from 'lucide-react';
+import { getSubjects } from '@/services/api';
+import { Badge } from '@/components/ui/badge';
+import { X } from 'lucide-react';
 
 const RegisterTutor = () => {
   const [name, setName] = useState('');
@@ -22,12 +24,35 @@ const RegisterTutor = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [phone, setPhone] = useState('');
   const [qualification, setQualification] = useState('');
-  const [subjects, setSubjects] = useState('');
+  const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
   const [experience, setExperience] = useState('');
   const [bio, setBio] = useState('');
   const [loading, setLoading] = useState(false);
+  const [subjects, setSubjects] = useState<any[]>([]);
+  const [loadingSubjects, setLoadingSubjects] = useState(true);
   const { register } = useAuth();
   const navigate = useNavigate();
+
+  // Fetch available subjects
+  useEffect(() => {
+    const fetchSubjects = async () => {
+      setLoadingSubjects(true);
+      try {
+        const response = await getSubjects({ isActive: true });
+        setSubjects(response.data.data || []);
+      } catch (error) {
+        console.error('Failed to fetch subjects:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load subjects. Please try again.',
+          variant: 'destructive',
+        });
+      } finally {
+        setLoadingSubjects(false);
+      }
+    };
+    fetchSubjects();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,6 +61,15 @@ const RegisterTutor = () => {
       toast({
         title: 'Password mismatch',
         description: 'Please make sure your passwords match.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (selectedSubjects.length === 0) {
+      toast({
+        title: 'Subjects required',
+        description: 'Please select at least one subject you can teach.',
         variant: 'destructive',
       });
       return;
@@ -50,19 +84,28 @@ const RegisterTutor = () => {
         password,
         phone,
         role: 'tutor',
-        subjects: subjects
-          .split(',')
-          .map((s) => s.trim())
-          .filter(Boolean),
+        subjects: selectedSubjects,
         experience,
         qualifications: qualification,
       });
-      navigate('/tutor-dashboard');
+      
+      // Show pending approval message instead of redirecting
       toast({
-        title: 'Registration successful',
-        description:
-          'Welcome to EduPortal! Start teaching and inspiring students.',
+        title: 'Registration submitted!',
+        description: 'Your account is pending admin approval. You will receive an email when approved.',
       });
+      
+      // Clear form
+      setName('');
+      setEmail('');
+      setPassword('');
+      setConfirmPassword('');
+      setPhone('');
+      setQualification('');
+      setSelectedSubjects([]);
+      setExperience('');
+      setBio('');
+      
     } catch (error) {
       toast({
         title: 'Registration failed',
@@ -72,6 +115,29 @@ const RegisterTutor = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const addSubject = (subjectName: string) => {
+    if (!selectedSubjects.includes(subjectName)) {
+      setSelectedSubjects([...selectedSubjects, subjectName]);
+    }
+  };
+
+  const removeSubject = (subjectName: string) => {
+    setSelectedSubjects(selectedSubjects.filter(subject => subject !== subjectName));
+  };
+
+  const getCategoryColor = (category: string) => {
+    const colors: { [key: string]: string } = {
+      'Science': 'bg-blue-100 text-blue-800',
+      'Mathematics': 'bg-purple-100 text-purple-800',
+      'Language': 'bg-green-100 text-green-800',
+      'Arts': 'bg-pink-100 text-pink-800',
+      'Social Studies': 'bg-orange-100 text-orange-800',
+      'Computer Science': 'bg-indigo-100 text-indigo-800',
+      'Other': 'bg-gray-100 text-gray-800',
+    };
+    return colors[category] || colors['Other'];
   };
 
   return (
@@ -148,14 +214,59 @@ const RegisterTutor = () => {
 
               <div>
                 <Label htmlFor='subjects'>Subjects You Teach</Label>
-                <Input
-                  id='subjects'
-                  type='text'
-                  value={subjects}
-                  onChange={(e) => setSubjects(e.target.value)}
-                  className='mt-1'
-                  placeholder='e.g., Mathematics, Physics, Chemistry'
-                />
+                {loadingSubjects ? (
+                  <div className='mt-1 p-3 border rounded-md bg-gray-50 text-gray-500'>
+                    Loading subjects...
+                  </div>
+                ) : (
+                  <div className='mt-1 space-y-2'>
+                    {/* Selected Subjects */}
+                    {selectedSubjects.length > 0 && (
+                      <div className='flex flex-wrap gap-2'>
+                        {selectedSubjects.map((subjectName) => {
+                          const subject = subjects.find(s => s.name === subjectName);
+                          return (
+                            <Badge 
+                              key={subjectName} 
+                              className={`${getCategoryColor(subject?.category || 'Other')} flex items-center gap-1`}
+                            >
+                              {subjectName}
+                              <button
+                                type='button'
+                                onClick={() => removeSubject(subjectName)}
+                                className='ml-1 hover:bg-black/10 rounded-full p-0.5'
+                              >
+                                <X className='h-3 w-3' />
+                              </button>
+                            </Badge>
+                          );
+                        })}
+                      </div>
+                    )}
+                    
+                    {/* Available Subjects */}
+                    <div className='border rounded-md p-3 max-h-40 overflow-y-auto'>
+                      <p className='text-sm text-gray-600 mb-2'>Click to select subjects:</p>
+                      <div className='space-y-1'>
+                        {subjects
+                          .filter(subject => !selectedSubjects.includes(subject.name))
+                          .map((subject) => (
+                            <button
+                              key={subject._id}
+                              type='button'
+                              onClick={() => addSubject(subject.name)}
+                              className='w-full text-left p-2 hover:bg-gray-100 rounded-md flex items-center justify-between'
+                            >
+                              <span className='font-medium'>{subject.name}</span>
+                              <Badge className={getCategoryColor(subject.category)}>
+                                {subject.category}
+                              </Badge>
+                            </button>
+                          ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div>
@@ -173,11 +284,11 @@ const RegisterTutor = () => {
 
               <div>
                 <Label htmlFor='bio'>Brief Bio</Label>
-                <Textarea
+                <textarea
                   id='bio'
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
-                  className='mt-1'
+                  className='mt-1 w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent'
                   placeholder='Tell us about your teaching style and experience...'
                   rows={3}
                 />

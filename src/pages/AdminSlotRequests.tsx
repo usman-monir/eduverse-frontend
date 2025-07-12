@@ -31,13 +31,6 @@ interface SlotRequest {
     phone?: string;
   };
   requestedTutorName?: string;
-  assignedTutor?: {
-    _id: string;
-    name: string;
-    email: string;
-    phone?: string;
-  };
-  assignedTutorName?: string;
   requestedAt: string;
   approvedAt?: string;
   rejectedAt?: string;
@@ -228,13 +221,6 @@ const AdminSlotRequests = () => {
                         <p className="text-sm text-gray-600">{selectedRequest.requestedTutor.email}</p>
                       )}
                     </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-500">Assigned Tutor</label>
-                      <p>{selectedRequest.assignedTutor?.name || selectedRequest.assignedTutorName || 'Not assigned'}</p>
-                      {selectedRequest.assignedTutor?.email && (
-                        <p className="text-sm text-gray-600">{selectedRequest.assignedTutor.email}</p>
-                      )}
-                    </div>
                   </div>
                   
                   <div className="grid grid-cols-2 gap-4">
@@ -393,12 +379,12 @@ const AdminSlotRequests = () => {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Requests</CardTitle>
+              <CardTitle className="text-sm font-medium">Rejected Requests</CardTitle>
               <User className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{requests.length}</div>
-              <p className="text-xs text-muted-foreground">All time</p>
+              <div className="text-2xl font-bold">{rejectedRequests.length}</div>
+              <p className="text-xs text-muted-foreground">Sessions rejected</p>
             </CardContent>
           </Card>
         </div>

@@ -63,13 +63,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } else {
       response = await registerStudent(data);
     }
-    const { token, user: userData } = response.data.data;
-    if (token) {
-      localStorage.setItem('token', token);
-      setUser(userData);
-    } else {
-      throw new Error('No token returned from API');
-    }
+    
+    // Don't automatically log in since user needs admin approval
+    // Return the response data for the registration page to handle
+    return response.data;
   };
 
   const logout = () => {

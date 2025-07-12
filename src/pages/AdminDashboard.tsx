@@ -196,36 +196,6 @@ const AdminDashboard = () => {
             </div>
           </CardContent>
         </Card>
-
-        {/* Quick Actions */}
-        <div className='grid grid-cols-1 md:grid-cols-4 gap-4'>
-          <Link to='/admin/sessions'>
-            <Button className='h-20 w-full'>
-              <div className='text-center'>
-                <Calendar className='h-6 w-6 mx-auto mb-2' />
-                <span>Manage Sessions</span>
-              </div>
-            </Button>
-          </Link>
-
-          <Link to='/study-materials'>
-            <Button variant='outline' className='h-20 w-full'>
-              <div className='text-center'>
-                <BookOpen className='h-6 w-6 mx-auto mb-2' />
-                <span>Study Materials</span>
-              </div>
-            </Button>
-          </Link>
-
-          <Link to='/admin/students'>
-            <Button variant='outline' className='h-20 w-full'>
-              <div className='text-center'>
-                <Users className='h-6 w-6 mx-auto mb-2' />
-                <span>View Students</span>
-              </div>
-            </Button>
-          </Link>
-        </div>
       </div>
     </DashboardLayout>
   );

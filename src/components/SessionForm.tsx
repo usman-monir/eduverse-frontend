@@ -12,12 +12,14 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Link as LinkIcon } from 'lucide-react';
+import { getAvailableTutors } from '@/services/api';
 
 interface SessionFormProps {
   session?: ClassSession;
   onSubmit: (sessionData: Omit<ClassSession, 'id'>) => void;
   onCancel: () => void;
   defaultTutor?: string;
+  isAdmin?: boolean;
 }
 
 const SessionForm = ({
@@ -25,10 +27,12 @@ const SessionForm = ({
   onSubmit,
   onCancel,
   defaultTutor,
+  isAdmin = false,
 }: SessionFormProps) => {
   const [formData, setFormData] = useState<{
     subject: string;
     tutor: string;
+    tutorId?: string;
     date: string;
     time: string;
     duration: string;
@@ -39,6 +43,7 @@ const SessionForm = ({
   }>({
     subject: '',
     tutor: defaultTutor || '',
+    tutorId: '',
     date: '',
     time: '',
     duration: '60 minutes',
@@ -48,11 +53,51 @@ const SessionForm = ({
     description: '',
   });
 
+  const [availableTutors, setAvailableTutors] = useState<any[]>([]);
+  const [loadingTutors, setLoadingTutors] = useState(false);
+  const [selectedTutorSubjects, setSelectedTutorSubjects] = useState<string[]>([]);
+
+  // Fetch available tutors if admin
+  useEffect(() => {
+    if (isAdmin) {
+      const fetchTutors = async () => {
+        setLoadingTutors(true);
+        try {
+          const response = await getAvailableTutors();
+          setAvailableTutors(response.data.data || []);
+        } catch (error) {
+          console.error('Failed to fetch tutors:', error);
+        } finally {
+          setLoadingTutors(false);
+        }
+      };
+      fetchTutors();
+    }
+  }, [isAdmin]);
+
+  // Update subjects when tutor changes
+  useEffect(() => {
+    if (isAdmin && formData.tutorId) {
+      const selectedTutor = availableTutors.find(t => t._id === formData.tutorId);
+      if (selectedTutor && selectedTutor.subjects) {
+        setSelectedTutorSubjects(selectedTutor.subjects);
+        // Clear subject if it's not in the new tutor's subjects
+        if (formData.subject && !selectedTutor.subjects.includes(formData.subject)) {
+          setFormData(prev => ({ ...prev, subject: '' }));
+        }
+      } else {
+        setSelectedTutorSubjects([]);
+        setFormData(prev => ({ ...prev, subject: '' }));
+      }
+    }
+  }, [formData.tutorId, availableTutors, isAdmin]);
+
   useEffect(() => {
     if (session) {
       setFormData({
         subject: session.subject,
         tutor: session.tutor,
+        tutorId: session.tutorId || '',
         date: session.date ? session.date.slice(0, 10) : '',
         time: session.time,
         duration: session.duration,
@@ -61,14 +106,18 @@ const SessionForm = ({
         meetingLink: session.meetingLink || '',
         description: session.description || '',
       });
-    } else if (defaultTutor) {
+    } else if (defaultTutor && !isAdmin) {
       setFormData((prev) => ({ ...prev, tutor: defaultTutor }));
     }
-  }, [session, defaultTutor]);
+  }, [session, defaultTutor, isAdmin]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    // For admin, include tutorId in the submission
+    const submissionData = isAdmin 
+      ? { ...formData, tutorId: formData.tutorId }
+      : formData;
+    onSubmit(submissionData);
   };
 
   const generateMeetingLink = () => {
@@ -79,34 +128,117 @@ const SessionForm = ({
     }));
   };
 
+  // Validation for form submission
+  const isFormValid = () => {
+    const requiredFields = ['subject', 'tutor', 'date', 'time', 'duration'];
+    const hasRequiredFields = requiredFields.every(field => 
+      formData[field as keyof typeof formData] && 
+      formData[field as keyof typeof formData] !== ''
+    );
+    
+    // For admin, also check if tutor is selected
+    if (isAdmin) {
+      return hasRequiredFields && formData.tutorId;
+    }
+    
+    return hasRequiredFields;
+  };
+
   return (
     <form onSubmit={handleSubmit} className='space-y-4'>
       <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
         <div>
-          <Label htmlFor='subject'>Subject</Label>
-          <Input
-            id='subject'
-            value={formData.subject}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, subject: e.target.value }))
-            }
-            placeholder='e.g., Mathematics, Physics'
-            required
-          />
+          <Label htmlFor='tutor'>Tutor</Label>
+          {isAdmin ? (
+            <Select
+              value={formData.tutorId || ''}
+              onValueChange={(value) => {
+                const selectedTutor = availableTutors.find(t => t._id === value);
+                setFormData((prev) => ({ 
+                  ...prev, 
+                  tutorId: value,
+                  tutor: selectedTutor?.name || '',
+                  subject: '' // Clear subject when tutor changes
+                }));
+              }}
+              disabled={loadingTutors}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={loadingTutors ? "Loading tutors..." : "Select a tutor"} />
+              </SelectTrigger>
+              <SelectContent>
+                {availableTutors.map((tutor) => (
+                  <SelectItem key={tutor._id} value={tutor._id}>
+                    {tutor.name} ({tutor.role})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <Input
+              id='tutor'
+              value={formData.tutor}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, tutor: e.target.value }))
+              }
+              placeholder='Tutor name'
+              required
+              readOnly={!!defaultTutor}
+            />
+          )}
         </div>
 
         <div>
-          <Label htmlFor='tutor'>Tutor</Label>
-          <Input
-            id='tutor'
-            value={formData.tutor}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, tutor: e.target.value }))
-            }
-            placeholder='Tutor name'
-            required
-            readOnly={!!defaultTutor}
-          />
+          <Label htmlFor='subject'>Subject</Label>
+          {isAdmin ? (
+            <div className='space-y-2'>
+              {selectedTutorSubjects.length > 0 ? (
+                <Select
+                  value={formData.subject}
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({ ...prev, subject: value }))
+                  }
+                  disabled={!formData.tutorId}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={!formData.tutorId ? "Select tutor first" : "Select subject"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {selectedTutorSubjects.map((subject) => (
+                      <SelectItem key={subject} value={subject}>
+                        {subject}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input
+                  id='subject'
+                  value={formData.subject}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, subject: e.target.value }))
+                  }
+                  placeholder='Enter subject manually (tutor has no subjects defined)'
+                  required
+                />
+              )}
+              {formData.tutorId && selectedTutorSubjects.length === 0 && (
+                <p className='text-sm text-amber-600'>
+                  ⚠️ Selected tutor has no subjects defined. Please enter subject manually.
+                </p>
+              )}
+            </div>
+          ) : (
+            <Input
+              id='subject'
+              value={formData.subject}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, subject: e.target.value }))
+              }
+              placeholder='e.g., Mathematics, Physics'
+              required
+            />
+          )}
         </div>
       </div>
 
@@ -232,7 +364,7 @@ const SessionForm = ({
         <Button type='button' variant='outline' onClick={onCancel}>
           Cancel
         </Button>
-        <Button type='submit'>
+        <Button type='submit' disabled={!isFormValid()}>
           {session ? 'Update Session' : 'Create Session'}
         </Button>
       </div>

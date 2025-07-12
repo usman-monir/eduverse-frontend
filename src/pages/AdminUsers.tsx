@@ -12,7 +12,7 @@ import DashboardLayout from '@/components/Layout/DashboardLayout';
 import { UserPlus, Mail, Users, GraduationCap } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useToast } from '@/hooks/use-toast';
-import { getAdminUsers } from '@/services/api';
+import { getAdminUsers, approveUser } from '@/services/api';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -104,6 +104,39 @@ const AdminUsers = () => {
 
   const getRoleIcon = (role: string) => {
     return role === 'tutor' ? <GraduationCap className="h-4 w-4" /> : <Users className="h-4 w-4" />;
+  };
+
+  const handleApproveUser = async (userId: string) => {
+    try {
+      await approveUser(userId);
+      toast({
+        title: "User Approved",
+        description: "User has been approved and can now log in.",
+      });
+      // Refresh the users list
+      const fetchUsers = async () => {
+        setLoading(true);
+        try {
+          const [studentsRes, tutorsRes] = await Promise.all([
+            getAdminUsers({ role: 'student', limit: 100 }),
+            getAdminUsers({ role: 'tutor', limit: 100 }),
+          ]);
+          setStudents(studentsRes.data.data || []);
+          setTutors(tutorsRes.data.data || []);
+        } catch (err) {
+          // Optionally handle error
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchUsers();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to approve user. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -217,7 +250,7 @@ const AdminUsers = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Users</CardTitle>
@@ -248,6 +281,19 @@ const AdminUsers = () => {
             <CardContent>
               <div className="text-2xl font-bold text-green-600">{tutors.length}</div>
               <p className="text-xs text-muted-foreground">Active tutors</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Pending Approval</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-yellow-600">
+                {students.filter(u => u.status === 'pending').length + tutors.filter(u => u.status === 'pending').length}
+              </div>
+              <p className="text-xs text-muted-foreground">Awaiting approval</p>
             </CardContent>
           </Card>
         </div>
@@ -296,6 +342,11 @@ const AdminUsers = () => {
                         {user.role}
                       </Badge>
                       {getStatusBadge(user.status)}
+                      {user.status === 'pending' && (
+                        <Button variant="outline" size="sm" onClick={() => handleApproveUser(user._id)}>
+                          Approve
+                        </Button>
+                      )}
                       <Button variant="outline" size="sm" onClick={() => navigate(`/admin/users/${user._id}`)}>
                         View Profile
                       </Button>
