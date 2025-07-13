@@ -50,6 +50,23 @@ export const getProfile = async () => {
   return api.get('/auth/me');
 };
 
+export const updateProfile = async (data: {
+  name?: string;
+  phone?: string;
+  subjects?: string[];
+  experience?: string;
+  avatar?: string;
+}) => {
+  return api.put('/auth/me', data);
+};
+
+export const changePassword = async (data: {
+  currentPassword: string;
+  newPassword: string;
+}) => {
+  return api.put('/auth/change-password', data);
+};
+
 export const getStudyMaterials = async (params: any = {}) => {
   return api.get('/study-materials', { params });
 };

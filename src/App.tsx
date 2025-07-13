@@ -25,7 +25,7 @@ import AdminSubjects from './pages/AdminSubjects';
 import WhatsAppAutomation from './pages/WhatsAppAutomation';
 import NotFound from './pages/NotFound';
 import AdminUserProfile from './pages/AdminUserProfile';
-import EmailTest from './pages/EmailTest';
+import UserProfile from './pages/UserProfile';
 
 const queryClient = new QueryClient();
 
@@ -150,6 +150,16 @@ const AppRoutes = () => {
         }
       />
 
+      {/* User Profile Route - Accessible to all authenticated users */}
+      <Route
+        path='/profile'
+        element={
+          <ProtectedRoute>
+            <UserProfile />
+          </ProtectedRoute>
+        }
+      />
+
       {/* Tutor Routes */}
       <Route
         path='/tutor-dashboard'
@@ -206,14 +216,6 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute requireRole='admin'>
             <WhatsAppAutomation />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path='/email-test'
-        element={
-          <ProtectedRoute requireRole='admin'>
-            <EmailTest />
           </ProtectedRoute>
         }
       />

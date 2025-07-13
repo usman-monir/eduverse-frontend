@@ -9,6 +9,7 @@ import {
   Users,
   Clock,
   MessageCircle,
+  User,
 } from 'lucide-react';
 
 const Sidebar = () => {
@@ -83,6 +84,15 @@ const Sidebar = () => {
             </Link>
           ))}
 
+          {/* Profile Link - Available to all users */}
+          <Link
+            to='/profile'
+            className={getNavItemClass('/profile')}
+          >
+            <User className='h-5 w-5' />
+            <span className='font-medium'>My Profile</span>
+          </Link>
+
           {/* Messages - Coming Soon */}
           <div onClick={handleComingSoon} className={getComingSoonClass()}>
             <MessageSquare className='h-5 w-5' />
@@ -97,22 +107,40 @@ const Sidebar = () => {
       <div className='mt-auto p-6 border-t border-gray-200'>
         <div className='flex items-center space-x-3 mb-4'>
           <div className='w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center'>
-            <span className='text-white text-sm font-medium'>
-              {user?.name?.charAt(0) || 'U'}
-            </span>
+            {user?.avatar ? (
+              <img
+                src={user.avatar}
+                alt={user?.name || 'User'}
+                className="w-8 h-8 rounded-full object-cover"
+              />
+            ) : (
+              <span className='text-white text-sm font-medium'>
+                {user?.name?.charAt(0) || 'U'}
+              </span>
+            )}
           </div>
-          <p className='text-sm font-medium text-gray-900'>{user?.name}</p>
-          <p className='text-xs text-gray-500 capitalize'>{user?.role}</p>
+          <div className='flex-1'>
+            <p className='text-sm font-medium text-gray-900'>{user?.name}</p>
+            <p className='text-xs text-gray-500 capitalize'>{user?.role}</p>
+          </div>
         </div>
-        <button
-          onClick={() => {
-            logout();
-            navigate('/login');
-          }}
-          className='w-full py-2 px-4 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors font-medium'
-        >
-          Logout
-        </button>
+        <div className='space-y-2'>
+          <Link
+            to='/profile'
+            className='w-full py-2 px-4 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors font-medium text-center block'
+          >
+            Edit Profile
+          </Link>
+          <button
+            onClick={() => {
+              logout();
+              navigate('/login');
+            }}
+            className='w-full py-2 px-4 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors font-medium'
+          >
+            Logout
+          </button>
+        </div>
       </div>
     </div>
   );

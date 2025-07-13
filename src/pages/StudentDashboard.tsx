@@ -24,7 +24,7 @@ const StudentDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
 
   const nextClass = sessions.find(
-    (session) => session.status === 'booked' && session.studentId === user?.id
+    (session) => session.status === 'booked' && session.studentId === user?._id
   );
 
   // Filter sessions for different views
