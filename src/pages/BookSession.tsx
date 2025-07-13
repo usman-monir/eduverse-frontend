@@ -360,10 +360,10 @@ const BookSession = () => {
                       console.log('Session ID:', sessionId); // Debug log
                       
                       return (
-                        <div
+                      <div
                           key={sessionId}
-                          className='border rounded-lg p-4 hover:shadow-md transition-shadow'
-                        >
+                        className='border rounded-lg p-4 hover:shadow-md transition-shadow'
+                      >
                         <div className='flex items-center justify-between'>
                           <div className='space-y-2'>
                             <h3 className='font-semibold text-lg'>

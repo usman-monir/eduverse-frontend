@@ -21,7 +21,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
 import DashboardLayout from '@/components/Layout/DashboardLayout';
 import { Calendar as CalendarIcon, Clock, User, Send } from 'lucide-react';
-import { createSlotRequest, getAllTutorsWithSubjects } from '@/services/api';
+import { createSessionSlotRequest, getAllTutorsWithSubjects } from '@/services/api';
 
 const RequestSlot = () => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(
@@ -104,13 +104,13 @@ const RequestSlot = () => {
     }
     setLoading(true);
     try {
-      await createSlotRequest({
+      await createSessionSlotRequest({
         subject,
-        preferredDate: selectedDate.toISOString().split('T')[0],
-        preferredTime: selectedTime,
+        date: selectedDate.toISOString().split('T')[0],
+        time: selectedTime,
         duration,
         description: message,
-        tutor: selectedTutor,
+        tutorId: selectedTutorObj?._id,
       });
       toast({
         title: 'Slot request submitted successfully!',

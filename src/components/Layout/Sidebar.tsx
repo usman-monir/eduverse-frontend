@@ -1,4 +1,3 @@
-import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -9,7 +8,6 @@ import {
   MessageSquare,
   Users,
   Clock,
-  ClipboardList,
   MessageCircle,
 } from 'lucide-react';
 
@@ -56,11 +54,6 @@ const Sidebar = () => {
     { path: '/admin/subjects', label: 'Subjects', icon: BookOpen },
     { path: '/admin/study-materials', label: 'Study Material', icon: BookOpen },
     { path: '/admin/users', label: 'Users', icon: Users },
-    {
-      path: '/admin/slot-requests',
-      label: 'Slot Requests',
-      icon: ClipboardList,
-    },
     { path: '/admin/whatsapp', label: 'WhatsApp', icon: MessageCircle },
   ];
 

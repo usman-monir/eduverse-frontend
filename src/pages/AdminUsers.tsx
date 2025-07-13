@@ -12,7 +12,7 @@ import DashboardLayout from '@/components/Layout/DashboardLayout';
 import { UserPlus, Mail, Users, GraduationCap } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useToast } from '@/hooks/use-toast';
-import { getAdminUsers, approveUser } from '@/services/api';
+import { getAdminUsers, approveUser, inviteUser } from '@/services/api';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -21,10 +21,14 @@ interface InviteForm {
   email: string;
   role: 'student' | 'tutor';
   temporaryPassword: string;
+  phone?: string;
+  subjects?: string[];
+  experience?: string;
 }
 
 const AdminUsers = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   
   const form = useForm<InviteForm>({
@@ -32,8 +36,12 @@ const AdminUsers = () => {
       name: '',
       email: '',
       role: 'student',
-      temporaryPassword: ''
-    }
+      temporaryPassword: '',
+      phone: '',
+      subjects: [],
+      experience: '',
+    },
+    mode: 'onChange',
   });
 
   const [tab, setTab] = useState<'student' | 'tutor'>('student');
@@ -42,22 +50,28 @@ const AdminUsers = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const [studentsRes, tutorsRes] = await Promise.all([
+        getAdminUsers({ role: 'student', limit: 100 }),
+        getAdminUsers({ role: 'tutor', limit: 100 }),
+      ]);
+      setStudents(studentsRes.data.data || []);
+      setTutors(tutorsRes.data.data || []);
+    } catch (err) {
+      console.error('Failed to fetch users:', err);
+      toast({
+        title: "Error",
+        description: "Failed to load users. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchUsers = async () => {
-      setLoading(true);
-      try {
-        const [studentsRes, tutorsRes] = await Promise.all([
-          getAdminUsers({ role: 'student', limit: 100 }),
-          getAdminUsers({ role: 'tutor', limit: 100 }),
-        ]);
-        setStudents(studentsRes.data.data || []);
-        setTutors(tutorsRes.data.data || []);
-      } catch (err) {
-        // Optionally handle error
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchUsers();
   }, []);
 
@@ -69,9 +83,20 @@ const AdminUsers = () => {
   };
 
   const onSubmit = async (data: InviteForm) => {
+    setIsSubmitting(true);
     try {
-      // Simulate API call to send invitation email
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Prepare the data for the API
+      const inviteData = {
+        name: data.name,
+        email: data.email,
+        role: data.role,
+        temporaryPassword: data.temporaryPassword,
+        phone: data.phone || undefined,
+        subjects: data.role === 'tutor' ? data.subjects : undefined,
+        experience: data.role === 'tutor' ? data.experience : undefined,
+      };
+
+      await inviteUser(inviteData);
       
       toast({
         title: "Invitation Sent",
@@ -80,12 +105,19 @@ const AdminUsers = () => {
       
       form.reset();
       setIsDialogOpen(false);
-    } catch (error) {
+      
+      // Refresh the users list
+      await fetchUsers();
+    } catch (error: any) {
+      console.error('Failed to invite user:', error);
+      const errorMessage = error.response?.data?.message || "Failed to send invitation. Please try again.";
       toast({
         title: "Error",
-        description: "Failed to send invitation. Please try again.",
+        description: errorMessage,
         variant: "destructive"
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -114,22 +146,7 @@ const AdminUsers = () => {
         description: "User has been approved and can now log in.",
       });
       // Refresh the users list
-      const fetchUsers = async () => {
-        setLoading(true);
-        try {
-          const [studentsRes, tutorsRes] = await Promise.all([
-            getAdminUsers({ role: 'student', limit: 100 }),
-            getAdminUsers({ role: 'tutor', limit: 100 }),
-          ]);
-          setStudents(studentsRes.data.data || []);
-          setTutors(tutorsRes.data.data || []);
-        } catch (err) {
-          // Optionally handle error
-        } finally {
-          setLoading(false);
-        }
-      };
-      fetchUsers();
+      await fetchUsers();
     } catch (error) {
       toast({
         title: "Error",
@@ -138,6 +155,8 @@ const AdminUsers = () => {
       });
     }
   };
+
+  const watchedRole = form.watch('role');
 
   return (
     <DashboardLayout>
@@ -168,6 +187,7 @@ const AdminUsers = () => {
                   <FormField
                     control={form.control}
                     name="name"
+                    rules={{ required: 'Full name is required' }}
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Full Name</FormLabel>
@@ -182,6 +202,13 @@ const AdminUsers = () => {
                   <FormField
                     control={form.control}
                     name="email"
+                    rules={{ 
+                      required: 'Email is required',
+                      pattern: {
+                        value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                        message: 'Invalid email address'
+                      }
+                    }}
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Email Address</FormLabel>
@@ -196,6 +223,7 @@ const AdminUsers = () => {
                   <FormField
                     control={form.control}
                     name="role"
+                    rules={{ required: 'Role is required' }}
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Role</FormLabel>
@@ -214,10 +242,71 @@ const AdminUsers = () => {
                       </FormItem>
                     )}
                   />
+
+                  <FormField
+                    control={form.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Phone Number (Optional)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter phone number" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {watchedRole === 'tutor' && (
+                    <>
+                      <FormField
+                        control={form.control}
+                        name="experience"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Experience (Optional)</FormLabel>
+                            <FormControl>
+                              <Input placeholder="e.g., 5 years teaching Mathematics" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="subjects"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Subjects (Optional)</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder="e.g., Mathematics, Physics, Chemistry" 
+                                {...field}
+                                value={Array.isArray(field.value) ? field.value.join(', ') : ''}
+                                onChange={(e) => {
+                                  const subjects = e.target.value.split(',').map(s => s.trim()).filter(s => s);
+                                  field.onChange(subjects);
+                                }}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </>
+                  )}
                   
                   <FormField
                     control={form.control}
                     name="temporaryPassword"
+                    rules={{ 
+                      required: 'Temporary password is required',
+                      minLength: {
+                        value: 6,
+                        message: 'Password must be at least 6 characters'
+                      }
+                    }}
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Temporary Password</FormLabel>
@@ -238,9 +327,9 @@ const AdminUsers = () => {
                     <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                       Cancel
                     </Button>
-                    <Button type="submit">
-                      <Mail className="h-4 w-4 mr-2" />
-                      Send Invitation
+                    <Button type="submit" disabled={isSubmitting}>
+                      {isSubmitting ? 'Sending...' : 'Send Invitation'}
+                      <Mail className="h-4 w-4 ml-2" />
                     </Button>
                   </div>
                 </form>
@@ -324,24 +413,24 @@ const AdminUsers = () => {
             {loading ? (
               <div className="text-center py-8 text-gray-500">Loading users...</div>
             ) : (
-              <div className="space-y-4">
+            <div className="space-y-4">
                 {users.map((user) => (
                   <div key={user._id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                        {getRoleIcon(user.role)}
-                      </div>
-                      <div>
-                        <h3 className="font-semibold">{user.name}</h3>
-                        <p className="text-sm text-gray-600">{user.email}</p>
-                        <p className="text-xs text-gray-500">Joined: {user.joinedDate ? new Date(user.joinedDate).toLocaleDateString() : ''}</p>
-                      </div>
+                  <div className="flex items-center space-x-4">
+                    <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+                      {getRoleIcon(user.role)}
                     </div>
-                    <div className="flex items-center space-x-3">
-                      <Badge variant="outline" className="capitalize">
-                        {user.role}
-                      </Badge>
-                      {getStatusBadge(user.status)}
+                    <div>
+                      <h3 className="font-semibold">{user.name}</h3>
+                      <p className="text-sm text-gray-600">{user.email}</p>
+                        <p className="text-xs text-gray-500">Joined: {user.joinedDate ? new Date(user.joinedDate).toLocaleDateString() : ''}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <Badge variant="outline" className="capitalize">
+                      {user.role}
+                    </Badge>
+                    {getStatusBadge(user.status)}
                       {user.status === 'pending' && (
                         <Button variant="outline" size="sm" onClick={() => handleApproveUser(user._id)}>
                           Approve
@@ -349,14 +438,14 @@ const AdminUsers = () => {
                       )}
                       <Button variant="outline" size="sm" onClick={() => navigate(`/admin/users/${user._id}`)}>
                         View Profile
-                      </Button>
-                    </div>
+                    </Button>
                   </div>
-                ))}
+                </div>
+              ))}
                 {users.length === 0 && (
                   <div className="text-center text-gray-500 py-8">No users found.</div>
                 )}
-              </div>
+            </div>
             )}
           </CardContent>
         </Card>

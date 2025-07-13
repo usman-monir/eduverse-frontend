@@ -6,6 +6,7 @@ import {
   updateSession as apiUpdateSession,
   deleteSession,
   getSessionById as apiGetSessionById,
+  approveSlotRequest,
 } from '@/services/api';
 
 export const useSessionManager = () => {
@@ -30,10 +31,12 @@ export const useSessionManager = () => {
         ...s,
         id: s._id,
         tutor: s.tutor?.name || s.tutorName || (typeof s.tutor === 'string' ? s.tutor : ''),
+        tutorId: s.tutor?._id || s.tutorId || (typeof s.tutor === 'string' ? s.tutor : ''),
         tutorObj: s.tutor,
-        studentId: s.studentId?._id || (typeof s.studentId === 'string' ? s.studentId : ''),
+        studentId: s.studentId?._id || s.studentId?.toString?.() || (typeof s.studentId === 'string' ? s.studentId : ''),
         studentObj: s.studentId,
         date: s.date ? s.date.slice(0, 10) : '',
+        createdBy: s.createdBy?._id || s.createdBy || '',
       }));
       setSessions(sessions);
     } catch (err: any) {
@@ -80,6 +83,15 @@ export const useSessionManager = () => {
     }
   };
 
+  const approveSlotRequestById = async (id: string, approved: boolean, notes?: string) => {
+    try {
+      await approveSlotRequest(id, approved, notes);
+      await fetchSessions();
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to approve/reject slot request');
+    }
+  };
+
   return {
     sessions,
     loading,
@@ -89,5 +101,6 @@ export const useSessionManager = () => {
     updateSession,
     deleteSession: deleteSessionById,
     getSessionById,
+    approveSlotRequest: approveSlotRequestById,
   };
 };

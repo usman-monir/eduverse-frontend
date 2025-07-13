@@ -112,32 +112,17 @@ export const getAvailableTutors = async () => {
   return api.get('/sessions/tutors/available');
 };
 
-// Slot Request APIs
-export const getSlotRequests = async (params: any = {}) => {
-  return api.get('/slot-requests', { params });
+// New Session APIs
+export const getMySessions = async (params: any = {}) => {
+  return api.get('/sessions/my', { params });
 };
 
-export const getSlotRequestById = async (requestId: string) => {
-  return api.get(`/slot-requests/${requestId}`);
+export const createSessionSlotRequest = async (data: any) => {
+  return api.post('/sessions/request', data);
 };
 
-export const createSlotRequest = async (data: any) => {
-  return api.post('/slot-requests', data);
-};
-
-export const updateSlotRequestStatus = async (
-  requestId: string,
-  status: string,
-  assignedTutorId?: string
-) => {
-  return api.put(`/slot-requests/${requestId}/status`, {
-    status,
-    assignedTutorId,
-  });
-};
-
-export const deleteSlotRequest = async (requestId: string) => {
-  return api.delete(`/slot-requests/${requestId}`);
+export const approveSlotRequest = async (sessionId: string, approved: boolean, notes?: string) => {
+  return api.put(`/sessions/${sessionId}/approve`, { approved, notes });
 };
 
 // WhatsApp Templates APIs
@@ -171,6 +156,18 @@ export const getAllTutorsWithSubjects = async () => {
 
 export const approveUser = async (userId: string) => {
   return api.put(`/admin/users/${userId}/approve`);
+};
+
+export const inviteUser = async (data: {
+  name: string;
+  email: string;
+  role: 'student' | 'tutor';
+  temporaryPassword: string;
+  phone?: string;
+  subjects?: string[];
+  experience?: string;
+}) => {
+  return api.post('/admin/users/invite', data);
 };
 
 // Subject APIs

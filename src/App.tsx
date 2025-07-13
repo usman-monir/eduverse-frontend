@@ -22,7 +22,6 @@ import AdminDashboard from './pages/AdminDashboard';
 import AdminSessions from './pages/AdminSessions';
 import AdminUsers from './pages/AdminUsers';
 import AdminSubjects from './pages/AdminSubjects';
-import AdminSlotRequests from './pages/AdminSlotRequests';
 import WhatsAppAutomation from './pages/WhatsAppAutomation';
 import NotFound from './pages/NotFound';
 import AdminUserProfile from './pages/AdminUserProfile';
@@ -201,14 +200,7 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
-      <Route
-        path='/admin/slot-requests'
-        element={
-          <ProtectedRoute requireRole='admin'>
-            <AdminSlotRequests />
-          </ProtectedRoute>
-        }
-      />
+
       <Route
         path='/admin/whatsapp'
         element={

@@ -16,10 +16,11 @@ import { getAvailableTutors } from '@/services/api';
 
 interface SessionFormProps {
   session?: ClassSession;
-  onSubmit: (sessionData: Omit<ClassSession, 'id'>) => void;
+  onSubmit: (sessionData: Omit<ClassSession, 'id' | 'createdAt' | 'updatedAt'>) => void;
   onCancel: () => void;
   defaultTutor?: string;
   isAdmin?: boolean;
+  isTutor?: boolean;
 }
 
 const SessionForm = ({
@@ -28,6 +29,7 @@ const SessionForm = ({
   onCancel,
   defaultTutor,
   isAdmin = false,
+  isTutor = false,
 }: SessionFormProps) => {
   const [formData, setFormData] = useState<{
     subject: string;
@@ -36,10 +38,11 @@ const SessionForm = ({
     date: string;
     time: string;
     duration: string;
-    status: 'available' | 'booked' | 'completed';
+    status: 'available' | 'booked' | 'completed' | 'pending' | 'approved' | 'cancelled';
     studentId: string;
     meetingLink: string;
     description: string;
+    type: 'admin_created' | 'tutor_created' | 'slot_request';
   }>({
     subject: '',
     tutor: defaultTutor || '',
@@ -51,15 +54,16 @@ const SessionForm = ({
     studentId: '',
     meetingLink: '',
     description: '',
+    type: 'admin_created',
   });
 
   const [availableTutors, setAvailableTutors] = useState<any[]>([]);
   const [loadingTutors, setLoadingTutors] = useState(false);
   const [selectedTutorSubjects, setSelectedTutorSubjects] = useState<string[]>([]);
 
-  // Fetch available tutors if admin
+  // Fetch available tutors if admin or tutor
   useEffect(() => {
-    if (isAdmin) {
+    if (isAdmin || isTutor) {
       const fetchTutors = async () => {
         setLoadingTutors(true);
         try {
@@ -73,11 +77,26 @@ const SessionForm = ({
       };
       fetchTutors();
     }
-  }, [isAdmin]);
+  }, [isAdmin, isTutor]);
+
+  // Pre-select tutor for tutors after tutors are loaded
+  useEffect(() => {
+    if (isTutor && availableTutors.length > 0 && defaultTutor) {
+      const currentTutor = availableTutors.find(t => t.name === defaultTutor);
+      if (currentTutor) {
+        setFormData((prev) => ({
+          ...prev,
+          tutor: currentTutor.name,
+          tutorId: currentTutor._id,
+          type: 'tutor_created',
+        }));
+      }
+    }
+  }, [isTutor, availableTutors, defaultTutor]);
 
   // Update subjects when tutor changes
   useEffect(() => {
-    if (isAdmin && formData.tutorId) {
+    if ((isAdmin || isTutor) && formData.tutorId) {
       const selectedTutor = availableTutors.find(t => t._id === formData.tutorId);
       if (selectedTutor && selectedTutor.subjects) {
         setSelectedTutorSubjects(selectedTutor.subjects);
@@ -90,7 +109,7 @@ const SessionForm = ({
         setFormData(prev => ({ ...prev, subject: '' }));
       }
     }
-  }, [formData.tutorId, availableTutors, isAdmin]);
+  }, [formData.tutorId, availableTutors, isAdmin, isTutor]);
 
   useEffect(() => {
     if (session) {
@@ -105,18 +124,22 @@ const SessionForm = ({
         studentId: session.studentId || '',
         meetingLink: session.meetingLink || '',
         description: session.description || '',
+        type: session.type,
       });
-    } else if (defaultTutor && !isAdmin) {
-      setFormData((prev) => ({ ...prev, tutor: defaultTutor }));
+    } else if (defaultTutor && isAdmin) {
+      // For admin, optionally pre-fill tutor name
+      setFormData((prev) => ({ ...prev, tutor: defaultTutor, type: 'admin_created' }));
     }
   }, [session, defaultTutor, isAdmin]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // For admin, include tutorId in the submission
-    const submissionData = isAdmin 
-      ? { ...formData, tutorId: formData.tutorId }
-      : formData;
+    // Ensure tutorId is always provided
+    const submissionData = {
+      ...formData,
+      tutorId: formData.tutorId || '',
+      createdBy: isAdmin ? 'admin' : 'tutor'
+    };
     onSubmit(submissionData);
   };
 
@@ -136,8 +159,8 @@ const SessionForm = ({
       formData[field as keyof typeof formData] !== ''
     );
     
-    // For admin, also check if tutor is selected
-    if (isAdmin) {
+    // For admin or tutor, also check if tutor is selected
+    if (isAdmin || isTutor) {
       return hasRequiredFields && formData.tutorId;
     }
     
@@ -149,10 +172,11 @@ const SessionForm = ({
       <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
         <div>
           <Label htmlFor='tutor'>Tutor</Label>
-          {isAdmin ? (
+          {(isAdmin || isTutor) ? (
             <Select
               value={formData.tutorId || ''}
               onValueChange={(value) => {
+                if (isTutor) return; // Prevent changing tutor for tutors
                 const selectedTutor = availableTutors.find(t => t._id === value);
                 setFormData((prev) => ({ 
                   ...prev, 
@@ -161,10 +185,10 @@ const SessionForm = ({
                   subject: '' // Clear subject when tutor changes
                 }));
               }}
-              disabled={loadingTutors}
+              disabled={loadingTutors || isTutor} // Disable for tutors
             >
               <SelectTrigger>
-                <SelectValue placeholder={loadingTutors ? "Loading tutors..." : "Select a tutor"} />
+                <SelectValue placeholder={loadingTutors ? "Loading tutors..." : isTutor ? formData.tutor : "Select a tutor"} />
               </SelectTrigger>
               <SelectContent>
                 {availableTutors.map((tutor) => (
@@ -175,22 +199,22 @@ const SessionForm = ({
               </SelectContent>
             </Select>
           ) : (
-            <Input
-              id='tutor'
-              value={formData.tutor}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, tutor: e.target.value }))
-              }
-              placeholder='Tutor name'
-              required
-              readOnly={!!defaultTutor}
-            />
+          <Input
+            id='tutor'
+            value={formData.tutor}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, tutor: e.target.value }))
+            }
+            placeholder='Tutor name'
+            required
+            readOnly={!!defaultTutor}
+          />
           )}
         </div>
 
         <div>
           <Label htmlFor='subject'>Subject</Label>
-          {isAdmin ? (
+          {(isAdmin || isTutor) ? (
             <div className='space-y-2'>
               {selectedTutorSubjects.length > 0 ? (
                 <Select

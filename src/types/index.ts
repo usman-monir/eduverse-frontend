@@ -1,5 +1,6 @@
 export interface User {
   id: string;
+  _id?: string;
   name: string;
   email: string;
   role: 'student' | 'tutor' | 'admin';
@@ -36,14 +37,18 @@ export interface ClassSession {
   id: string;
   subject: string;
   tutor: string;
-  tutorId?: string;
+  tutorId: string;
   date: string;
   time: string;
   duration: string;
-  status: 'available' | 'booked' | 'completed';
+  status: 'available' | 'booked' | 'completed' | 'pending' | 'approved' | 'cancelled';
   studentId?: string;
   meetingLink?: string;
   description?: string;
+  type: 'admin_created' | 'tutor_created' | 'slot_request';
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Message {
