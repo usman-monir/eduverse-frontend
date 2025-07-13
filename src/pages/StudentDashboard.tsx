@@ -364,6 +364,11 @@ const StudentDashboard = () => {
                         </div>
                         <div className='flex items-center space-x-2'>
                           {getStatusBadge(session.status)}
+                          <Link to={`/session/${session.id}`}>
+                            <Button variant='outline' size='sm'>
+                              View Details
+                            </Button>
+                          </Link>
                           <Button size='sm'>Join Class</Button>
                         </div>
                       </div>

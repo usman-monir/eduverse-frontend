@@ -6,6 +6,7 @@ import { toast } from '@/hooks/use-toast';
 import DashboardLayout from '@/components/Layout/DashboardLayout';
 import { Calendar, Clock, User, Video, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { getSessions } from '@/services/api';
+import { Link } from 'react-router-dom';
 
 interface Session {
   _id: string;
@@ -152,6 +153,14 @@ const StudentSessions = () => {
             </Button>
           </div>
         )}
+        
+        <div className="mt-4">
+          <Link to={`/session/${session._id}`}>
+            <Button variant="outline" className="w-full">
+              View Details
+            </Button>
+          </Link>
+        </div>
       </CardContent>
     </Card>
   );

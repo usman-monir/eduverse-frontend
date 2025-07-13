@@ -26,6 +26,7 @@ import WhatsAppAutomation from './pages/WhatsAppAutomation';
 import NotFound from './pages/NotFound';
 import AdminUserProfile from './pages/AdminUserProfile';
 import UserProfile from './pages/UserProfile';
+import SessionDetail from './pages/SessionDetail';
 
 const queryClient = new QueryClient();
 
@@ -146,6 +147,16 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <Messages />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Session Detail Route - Accessible to all authenticated users with permission logic */}
+      <Route
+        path='/session/:sessionId'
+        element={
+          <ProtectedRoute>
+            <SessionDetail />
           </ProtectedRoute>
         }
       />

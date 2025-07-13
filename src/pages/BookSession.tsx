@@ -210,10 +210,6 @@ const BookSession = () => {
                   <div className='w-3 h-3 bg-green-500 rounded-full'></div>
                   <span className='text-sm text-green-700'>Available</span>
                 </div>
-                <div className='flex items-center space-x-1'>
-                  <Badge className='bg-green-500 text-white text-xs px-1 py-0.5'>3</Badge>
-                  <span className='text-sm text-green-700'>Session count</span>
-                </div>
               </div>
             </div>
           </CardContent>

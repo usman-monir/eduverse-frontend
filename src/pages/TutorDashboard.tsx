@@ -288,7 +288,7 @@ const TutorDashboard = () => {
                       <div className='flex items-center space-x-4 text-sm text-gray-600'>
                         <span>🕐 {session.time}</span>
                         <span>⏰ {session.duration}</span>
-                        <span>👨‍🎓 Student ID: {session.studentId}</span>
+                        <span>👨‍🎓 Students: {session.enrolledStudents?.length || 0}/{session.maxStudents}</span>
                       </div>
                     </div>
                     <div className='flex items-center space-x-2'>
@@ -324,8 +324,8 @@ const TutorDashboard = () => {
                       <span>📅 {session.date}</span>
                       <span>🕐 {session.time}</span>
                       <span>⏰ {session.duration}</span>
-                      {session.studentId && (
-                        <span>👨‍🎓 Student ID: {session.studentId}</span>
+                      {session.enrolledStudents && session.enrolledStudents.length > 0 && (
+                        <span>👨‍🎓 Students: {session.enrolledStudents.length}/{session.maxStudents}</span>
                       )}
                     </div>
                   </div>
@@ -378,27 +378,34 @@ const TutorDashboard = () => {
                             <span>📅 {session.date}</span>
                             <span>🕐 {session.time}</span>
                             <span>⏰ {session.duration}</span>
-                            {session.studentId && (
-                              <span>👨‍🎓 Student ID: {session.studentId}</span>
-                            )}
+                          
                           </div>
                         </div>
                         <div className='flex items-center space-x-2'>
                           {getStatusBadge(session.status)}
-                          <Button
-                            variant='outline'
-                            size='sm'
-                            onClick={() => setEditSession(session)}
-                          >
-                            <Edit className='h-4 w-4' />
-                          </Button>
-                          <Button
-                            variant='outline'
-                            size='sm'
-                            onClick={() => handleDeleteSession(session.id)}
-                          >
-                            <Trash2 className='h-4 w-4' />
-                          </Button>
+                          <Link to={`/session/${session.id}`}>
+                            <Button variant='outline' size='sm'>
+                              View Details
+                            </Button>
+                          </Link>
+                          {canEditOrDelete(session) && (
+                            <>
+                              <Button
+                                variant='outline'
+                                size='sm'
+                                onClick={() => setEditSession(session)}
+                              >
+                                <Edit className='h-4 w-4' />
+                              </Button>
+                              <Button
+                                variant='outline'
+                                size='sm'
+                                onClick={() => handleDeleteSession(session.id)}
+                              >
+                                <Trash2 className='h-4 w-4' />
+                              </Button>
+                            </>
+                          )}
                         </div>
                       </div>
                     ))
@@ -436,8 +443,8 @@ const TutorDashboard = () => {
                             <span>📅 {session.date}</span>
                             <span>🕐 {session.time}</span>
                             <span>⏰ {session.duration}</span>
-                            {session.studentId && (
-                              <span>👨‍🎓 Student ID: {session.studentId}</span>
+                            {session.enrolledStudents && session.enrolledStudents.length > 0 && (
+                              <span>👨‍🎓 Students: {session.enrolledStudents.length}/{session.maxStudents}</span>
                             )}
                           </div>
                           {session.description && (

@@ -59,6 +59,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { Link } from 'react-router-dom';
 
 const AdminSessions = () => {
   const { sessions, loading, error, addSession, updateSession, deleteSession, approveSlotRequest } =
@@ -112,7 +113,9 @@ const AdminSessions = () => {
       filtered = filtered.filter(session =>
       session.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
         session.tutor.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (session.studentId && session.studentId.toString().includes(searchTerm.toLowerCase()))
+        (session.enrolledStudents && session.enrolledStudents.some(enrollment => 
+          enrollment.studentName.toLowerCase().includes(searchTerm.toLowerCase())
+        ))
       );
     }
 
@@ -497,9 +500,9 @@ const AdminSessions = () => {
                         </span>
                         <span>⏰ {session.duration}</span>
                       </div>
-                      {session.studentId && (
+                      {session.enrolledStudents && session.enrolledStudents.length > 0 && (
                         <p className='text-sm text-blue-600'>
-                          Student ID: {session.studentId}
+                          Students: {session.enrolledStudents.length}/{session.maxStudents}
                         </p>
                       )}
                         </div>
@@ -507,6 +510,11 @@ const AdminSessions = () => {
                     <div className='flex items-center space-x-2'>
                       {getStatusBadge(session.status)}
                           {getTypeBadge(session.type)}
+                          <Link to={`/session/${session.id}`}>
+                            <Button variant='outline' size='sm'>
+                              View Details
+                            </Button>
+                          </Link>
                           {canEditOrDelete(session) && (
                             <>
                       <Dialog
@@ -604,8 +612,8 @@ const AdminSessions = () => {
                               <span>📅 {session.date}</span>
                               <span>🕐 {session.time}</span>
                               <span>⏰ {session.duration}</span>
-                              {session.studentId && (
-                                <span>👨‍🎓 Student ID: {session.studentId}</span>
+                              {session.enrolledStudents && session.enrolledStudents.length > 0 && (
+                                <span>👨‍🎓 Students: {session.enrolledStudents.length}/{session.maxStudents}</span>
                               )}
                             </div>
                           </div>
@@ -661,8 +669,8 @@ const AdminSessions = () => {
                               <span>📅 {session.date}</span>
                               <span>🕐 {session.time}</span>
                               <span>⏰ {session.duration}</span>
-                              {session.studentId && (
-                                <span>👨‍🎓 Student ID: {session.studentId}</span>
+                              {session.enrolledStudents && session.enrolledStudents.length > 0 && (
+                                <span>👨‍🎓 Students: {session.enrolledStudents.length}/{session.maxStudents}</span>
                               )}
                             </div>
                             {session.description && (

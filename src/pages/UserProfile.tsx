@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { getProfile, updateProfile, changePassword } from '@/services/api';
+import { getProfile, updateProfile, changePassword, getSubjects } from '@/services/api';
+import { Subject } from '@/types';
+import { X } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -39,6 +41,8 @@ const UserProfile = () => {
   const [profileData, setProfileData] = useState<any>(null);
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [subjectsLoading, setSubjectsLoading] = useState(true);
 
   const profileForm = useForm<ProfileForm>({
     defaultValues: {
@@ -62,6 +66,7 @@ const UserProfile = () => {
 
   useEffect(() => {
     fetchProfile();
+    fetchSubjects();
   }, []);
 
   const fetchProfile = async () => {
@@ -91,6 +96,22 @@ const UserProfile = () => {
     }
   };
 
+  const fetchSubjects = async () => {
+    setSubjectsLoading(true);
+    try {
+      const response = await getSubjects({ isActive: true });
+      setSubjects(response.data.data || []);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to load subjects. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setSubjectsLoading(false);
+    }
+  };
+
   const onProfileSubmit = async (data: ProfileForm) => {
     setIsUpdatingProfile(true);
     try {
@@ -99,9 +120,13 @@ const UserProfile = () => {
         phone: data.phone,
       };
 
+      // Add subjects for both students and tutors
+      if (data.subjects) {
+        updateData.subjects = data.subjects;
+      }
+
       // Add role-specific fields for tutors
       if (user?.role === 'tutor') {
-        updateData.subjects = data.subjects;
         updateData.experience = data.experience;
       }
 
@@ -169,6 +194,20 @@ const UserProfile = () => {
     } finally {
       setIsChangingPassword(false);
     }
+  };
+
+  // Helper for badge color
+  const getCategoryColor = (category: string) => {
+    const colors: { [key: string]: string } = {
+      'Science': 'bg-blue-100 text-blue-800',
+      'Mathematics': 'bg-purple-100 text-purple-800',
+      'Language': 'bg-green-100 text-green-800',
+      'Arts': 'bg-pink-100 text-pink-800',
+      'Social Studies': 'bg-orange-100 text-orange-800',
+      'Computer Science': 'bg-indigo-100 text-indigo-800',
+      'Other': 'bg-gray-100 text-gray-800',
+    };
+    return colors[category] || colors['Other'];
   };
 
   const getStatusBadge = (status: string) => {
@@ -331,15 +370,131 @@ const UserProfile = () => {
                             <FormItem>
                               <FormLabel>Subjects</FormLabel>
                               <FormControl>
-                                <Input 
-                                  placeholder="e.g., Mathematics, Physics, Chemistry" 
-                                  {...field}
-                                  value={Array.isArray(field.value) ? field.value.join(', ') : ''}
-                                  onChange={(e) => {
-                                    const subjects = e.target.value.split(',').map(s => s.trim()).filter(s => s);
-                                    field.onChange(subjects);
-                                  }}
-                                />
+                                <div>
+                                  {subjectsLoading ? (
+                                    <div className='mt-1 p-3 border rounded-md bg-gray-50 text-gray-500'>
+                                      Loading subjects...
+                                    </div>
+                                  ) : (
+                                    <div className='mt-1 space-y-2'>
+                                      {/* Selected Subjects */}
+                                      {Array.isArray(field.value) && field.value.length > 0 && (
+                                        <div className='flex flex-wrap gap-2'>
+                                          {field.value.map((subjectName: string) => {
+                                            const subject = subjects.find(s => s.name === subjectName);
+                                            return (
+                                              <Badge 
+                                                key={subjectName} 
+                                                className={`${getCategoryColor(subject?.category || 'Other')} flex items-center gap-1`}
+                                              >
+                                                {subjectName}
+                                                <button
+                                                  type='button'
+                                                  onClick={() => field.onChange(field.value.filter((s: string) => s !== subjectName))}
+                                                  className='ml-1 hover:bg-black/10 rounded-full p-0.5'
+                                                >
+                                                  <X className='h-3 w-3' />
+                                                </button>
+                                              </Badge>
+                                            );
+                                          })}
+                                        </div>
+                                      )}
+                                      {/* Available Subjects */}
+                                      <div className='border rounded-md p-3 max-h-40 overflow-y-auto'>
+                                        <p className='text-sm text-gray-600 mb-2'>Click to select subjects:</p>
+                                        <div className='space-y-1'>
+                                          {subjects
+                                            .filter(subject => !field.value.includes(subject.name))
+                                            .map((subject) => (
+                                              <button
+                                                key={subject.id || subject.name}
+                                                type='button'
+                                                onClick={() => field.onChange([...field.value, subject.name])}
+                                                className='w-full text-left p-2 hover:bg-gray-100 rounded-md flex items-center justify-between'
+                                              >
+                                                <span className='font-medium'>{subject.name}</span>
+                                                <Badge className={getCategoryColor(subject.category || 'Other')}>
+                                                  {subject.category}
+                                                </Badge>
+                                              </button>
+                                            ))}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </>
+                    )}
+                    {/* Student subjects selection, wrapped in fragment for valid JSX */}
+                    {user?.role === 'student' && profileData?.subjects && (
+                      <>
+                        <FormField
+                          control={profileForm.control}
+                          name="subjects"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Subjects</FormLabel>
+                              <FormControl>
+                                <div>
+                                  {subjectsLoading ? (
+                                    <div className='mt-1 p-3 border rounded-md bg-gray-50 text-gray-500'>
+                                      Loading subjects...
+                                    </div>
+                                  ) : (
+                                    <div className='mt-1 space-y-2'>
+                                      {/* Selected Subjects */}
+                                      {Array.isArray(field.value) && field.value.length > 0 && (
+                                        <div className='flex flex-wrap gap-2'>
+                                          {field.value.map((subjectName: string) => {
+                                            const subject = subjects.find(s => s.name === subjectName);
+                                            return (
+                                              <Badge 
+                                                key={subjectName} 
+                                                className={`${getCategoryColor(subject?.category || 'Other')} flex items-center gap-1`}
+                                              >
+                                                {subjectName}
+                                                <button
+                                                  type='button'
+                                                  onClick={() => field.onChange(field.value.filter((s: string) => s !== subjectName))}
+                                                  className='ml-1 hover:bg-black/10 rounded-full p-0.5'
+                                                >
+                                                  <X className='h-3 w-3' />
+                                                </button>
+                                              </Badge>
+                                            );
+                                          })}
+                                        </div>
+                                      )}
+                                      {/* Available Subjects */}
+                                      <div className='border rounded-md p-3 max-h-40 overflow-y-auto'>
+                                        <p className='text-sm text-gray-600 mb-2'>Click to select subjects:</p>
+                                        <div className='space-y-1'>
+                                          {subjects
+                                            .filter(subject => !field.value.includes(subject.name))
+                                            .map((subject) => (
+                                              <button
+                                                key={subject.id || subject.name}
+                                                type='button'
+                                                onClick={() => field.onChange([...field.value, subject.name])}
+                                                className='w-full text-left p-2 hover:bg-gray-100 rounded-md flex items-center justify-between'
+                                              >
+                                                <span className='font-medium'>{subject.name}</span>
+                                                <Badge className={getCategoryColor(subject.category || 'Other')}>
+                                                  {subject.category}
+                                                </Badge>
+                                              </button>
+                                            ))}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
                               </FormControl>
                               <FormMessage />
                             </FormItem>

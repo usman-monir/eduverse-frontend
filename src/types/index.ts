@@ -42,7 +42,15 @@ export interface ClassSession {
   time: string;
   duration: string;
   status: 'available' | 'booked' | 'completed' | 'pending' | 'approved' | 'cancelled';
-  studentId?: string;
+  enrolledStudents: Array<{
+    studentId: string;
+    studentName: string;
+    enrolledAt: string;
+  }>;
+  maxStudents: number;
+  isFull: boolean;
+  availableSpots: number;
+  enrollmentCount: number;
   meetingLink?: string;
   description?: string;
   type: 'admin_created' | 'tutor_created' | 'slot_request';
