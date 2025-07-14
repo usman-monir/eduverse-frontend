@@ -90,14 +90,27 @@ const AdminSessions = () => {
         return isTutorMatch || isCreator;
       });
     }
+    // Students see all sessions (no filter)
+    // Admins see all sessions (no filter)
 
     // Tab-based filtering
-    if (activeTab === 'my-created') {
-      filtered = filtered.filter(session => 
-        session.createdBy?.toString() === user?._id?.toString() || session.createdBy === user?._id
-      );
-    } else if (activeTab === 'slot-requests') {
-      filtered = filtered.filter(session => session.type === 'slot_request');
+    if (user?.role === 'student') {
+      if (activeTab === 'my-sessions') {
+        // My Sessions: enrolled or slot requests
+        filtered = sessions.filter(session => {
+          const isEnrolled = session.enrolledStudents && session.enrolledStudents.some(enrollment => enrollment.studentId === user._id || enrollment.studentId === user.id);
+          const isSlotRequest = session.type === 'slot_request' && (session.createdBy === user._id || session.createdBy === user.id);
+          return isEnrolled || isSlotRequest;
+        });
+      }
+    } else {
+      if (activeTab === 'my-created') {
+        filtered = filtered.filter(session => 
+          session.createdBy?.toString() === user?._id?.toString() || session.createdBy === user?._id
+        );
+      } else if (activeTab === 'slot-requests') {
+        filtered = filtered.filter(session => session.type === 'slot_request');
+      }
     }
 
     // Status and type filtering
@@ -111,7 +124,7 @@ const AdminSessions = () => {
     // Search filtering
     if (searchTerm) {
       filtered = filtered.filter(session =>
-      session.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        session.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
         session.tutor.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (session.enrolledStudents && session.enrolledStudents.some(enrollment => 
           enrollment.studentName.toLowerCase().includes(searchTerm.toLowerCase())
@@ -442,18 +455,30 @@ const AdminSessions = () => {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className='space-y-6'>
-          <TabsList className='grid w-full grid-cols-3'>
+          <TabsList className={`grid w-full ${user?.role === 'student' ? 'grid-cols-2' : 'grid-cols-3'}`}>
             <TabsTrigger value='all'>
               All Sessions ({filteredSessions.length})
             </TabsTrigger>
-            <TabsTrigger value='my-created'>
-              My Created ({filteredSessions.filter(s => 
-                s.createdBy?.toString() === user?._id?.toString() || s.createdBy === user?._id
-              ).length})
-            </TabsTrigger>
-            <TabsTrigger value='slot-requests'>
-              Slot Requests ({filteredSessions.filter(s => s.type === 'slot_request').length})
-            </TabsTrigger>
+            {user?.role === 'student' ? (
+              <TabsTrigger value='my-sessions'>
+                My Sessions ({sessions.filter(session => {
+                  const isEnrolled = session.enrolledStudents && session.enrolledStudents.some(enrollment => enrollment.studentId === user._id || enrollment.studentId === user.id);
+                  const isSlotRequest = session.type === 'slot_request' && (session.createdBy === user._id || session.createdBy === user.id);
+                  return isEnrolled || isSlotRequest;
+                }).length})
+              </TabsTrigger>
+            ) : (
+              <TabsTrigger value='my-created'>
+                My Created ({filteredSessions.filter(s => 
+                  s.createdBy?.toString() === user?._id?.toString() || s.createdBy === user?._id
+                ).length})
+              </TabsTrigger>
+            )}
+            {user?.role !== 'student' && (
+              <TabsTrigger value='slot-requests'>
+                Slot Requests ({filteredSessions.filter(s => s.type === 'slot_request').length})
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value='all' className='space-y-4'>

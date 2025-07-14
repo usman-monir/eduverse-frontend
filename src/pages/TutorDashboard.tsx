@@ -12,20 +12,38 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Link } from 'react-router-dom';
-import { Calendar, Clock, Users, BookOpen, Edit, Trash2, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
+import {
+  Calendar,
+  Clock,
+  Users,
+  BookOpen,
+  Edit,
+  Trash2,
+  AlertCircle,
+  CheckCircle,
+  XCircle,
+} from 'lucide-react';
 import DashboardLayout from '@/components/Layout/DashboardLayout';
 import { ClassSession } from '@/types';
 import SessionForm from '@/components/SessionForm';
 
 const TutorDashboard = () => {
   const { user } = useAuth();
-  const { sessions, loading, error, addSession, updateSession, deleteSession, approveSlotRequest } = useSessionManager();
+  const {
+    sessions,
+    loading,
+    error,
+    addSession,
+    updateSession,
+    deleteSession,
+    approveSlotRequest,
+  } = useSessionManager();
   const [showCreate, setShowCreate] = useState(false);
   const [editSession, setEditSession] = useState<ClassSession | null>(null);
   const [activeTab, setActiveTab] = useState('all-sessions');
 
   const today = new Date().toISOString().split('T')[0];
-  
+
   const isTutorMatch = (session: any) => {
     // Prefer matching by user id if available, fallback to name
     if (user?._id && session.tutorId) return session.tutorId === user._id;
@@ -33,20 +51,23 @@ const TutorDashboard = () => {
   };
 
   const isCreator = (session: any) => {
-    return session.createdBy?.toString() === user?._id?.toString() || session.createdBy === user?._id;
+    return (
+      session.createdBy?.toString() === user?._id?.toString() ||
+      session.createdBy === user?._id
+    );
   };
 
   // Filter sessions by different criteria
-  const slotRequests = sessions.filter(session => 
-    session.type === 'slot_request' && isTutorMatch(session)
+  const slotRequests = sessions.filter(
+    (session) => session.type === 'slot_request' && isTutorMatch(session)
   );
 
-  const allSessions = sessions.filter(session => 
-    isTutorMatch(session) && session.type !== 'slot_request'
+  const allSessions = sessions.filter(
+    (session) => isTutorMatch(session) && session.type !== 'slot_request'
   );
 
-  const myCreatedSessions = sessions.filter(session => 
-    isCreator(session) && session.type !== 'slot_request'
+  const myCreatedSessions = sessions.filter(
+    (session) => isCreator(session) && session.type !== 'slot_request'
   );
 
   const todaySessions = allSessions.filter(
@@ -114,9 +135,35 @@ const TutorDashboard = () => {
   };
 
   const canEditOrDelete = (session: any) => {
-    return user?.role === 'admin' || 
+    return (
+      user?.role === 'admin' ||
       session.createdBy?.toString() === user?._id?.toString() ||
-      session.createdBy === user?._id;
+      session.createdBy === user?._id
+    );
+  };
+
+  // Add type and creator badges
+  const getTypeBadge = (type: string) => {
+    switch (type) {
+      case 'admin_created':
+        return <Badge className='bg-purple-100 text-purple-800'>Admin Created</Badge>;
+      case 'tutor_created':
+        return <Badge className='bg-blue-100 text-blue-800'>Tutor Created</Badge>;
+      case 'slot_request':
+        return <Badge className='bg-orange-100 text-orange-800'>Slot Request</Badge>;
+      default:
+        return null;
+    }
+  };
+
+  const getCreatorBadge = (session: any) => {
+    if (session.createdBy === user?._id || session.createdBy === user?.id) {
+      return <Badge className='bg-blue-100 text-blue-800'>You</Badge>;
+    }
+    if (session.createdByName) {
+      return <Badge className='bg-gray-100 text-gray-800'>{session.createdByName}</Badge>;
+    }
+    return null;
   };
 
   if (loading) {
@@ -148,7 +195,8 @@ const TutorDashboard = () => {
             Welcome back, {user?.name}!
           </h1>
           <p className='text-green-100'>
-            Ready to teach today? You have {todaySessions.length} sessions scheduled.
+            Ready to teach today? You have {todaySessions.length} sessions
+            scheduled.
           </p>
         </div>
 
@@ -203,16 +251,14 @@ const TutorDashboard = () => {
 
           <Card>
             <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-              <CardTitle className='text-sm font-medium'>Slot Requests</CardTitle>
+              <CardTitle className='text-sm font-medium'>
+                Slot Requests
+              </CardTitle>
               <AlertCircle className='h-4 w-4 text-muted-foreground' />
             </CardHeader>
             <CardContent>
-              <div className='text-2xl font-bold'>
-                {slotRequests.length}
-              </div>
-              <p className='text-xs text-muted-foreground'>
-                Pending requests
-              </p>
+              <div className='text-2xl font-bold'>{slotRequests.length}</div>
+              <p className='text-xs text-muted-foreground'>Pending requests</p>
             </CardContent>
           </Card>
         </div>
@@ -255,7 +301,11 @@ const TutorDashboard = () => {
         )}
 
         {/* Tabs for Session Management */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className='space-y-6'>
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className='space-y-6'
+        >
           <TabsList className='grid w-full grid-cols-3'>
             <TabsTrigger value='all-sessions'>
               All Sessions ({allSessions.length})
@@ -270,62 +320,122 @@ const TutorDashboard = () => {
 
           {/* All Sessions Tab */}
           <TabsContent value='all-sessions' className='space-y-6'>
-        <Card>
-          <CardHeader>
-            <CardTitle>Today's Sessions</CardTitle>
-            <CardDescription>Your scheduled classes for today</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className='space-y-4'>
-              {todaySessions.length > 0 ? (
-                todaySessions.map((session) => (
-                  <div
+            {/* All My Sessions Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle>All My Sessions</CardTitle>
+                <CardDescription>
+                  Every session you are the tutor for
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className='space-y-4'>
+                  {allSessions.length > 0 ? (
+                    allSessions.map((session) => (
+                      <div
                         key={session.id}
-                    className='flex items-center justify-between p-4 border rounded-lg'
-                  >
-                    <div className='space-y-1'>
-                      <h3 className='font-semibold'>{session.subject}</h3>
-                      <div className='flex items-center space-x-4 text-sm text-gray-600'>
-                        <span>🕐 {session.time}</span>
-                        <span>⏰ {session.duration}</span>
+                        className='flex items-center justify-between p-4 border rounded-lg'
+                      >
+                        <div className='space-y-1'>
+                          <h3 className='font-semibold'>{session.subject}</h3>
+                          <div className='flex items-center space-x-4 text-sm text-gray-600'>
+                            <span>📅 {session.date}</span>
+                            <span>🕐 {session.time}</span>
+                            <span>⏰ {session.duration}</span>
+                            <span>Status: {getStatusBadge(session.status)}</span>
+                            {getTypeBadge(session.type)}
+                            {getCreatorBadge(session)}
+                          </div>
+                        </div>
+                        <div className='flex items-center space-x-2'>
+                          {canEditOrDelete(session) && (
+                            <>
+                              <Button
+                                variant='outline'
+                                size='sm'
+                                onClick={() => setEditSession(session)}
+                              >
+                                <Edit className='h-4 w-4' />
+                              </Button>
+                              <Button
+                                variant='outline'
+                                size='sm'
+                                onClick={() => handleDeleteSession(session.id)}
+                              >
+                                <Trash2 className='h-4 w-4' />
+                              </Button>
+                            </>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                    <div className='flex items-center space-x-2'>
+                    ))
+                  ) : (
+                    <p className='text-gray-500 text-center py-8'>
+                      You have no sessions as tutor yet
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+            {/* End All My Sessions Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Today's Sessions</CardTitle>
+                <CardDescription>
+                  Your scheduled classes for today
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className='space-y-4'>
+                  {todaySessions.length > 0 ? (
+                    todaySessions.map((session) => (
+                      <div
+                        key={session.id}
+                        className='flex items-center justify-between p-4 border rounded-lg'
+                      >
+                        <div className='space-y-1'>
+                          <h3 className='font-semibold'>{session.subject}</h3>
+                          <div className='flex items-center space-x-4 text-sm text-gray-600'>
+                            <span>🕐 {session.time}</span>
+                            <span>⏰ {session.duration}</span>
+                          </div>
+                        </div>
+                        <div className='flex items-center space-x-2'>
                           {getStatusBadge(session.status)}
-                      <Button size='sm'>Start Session</Button>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className='text-gray-500 text-center py-8'>
-                  No sessions scheduled for today
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+                          <Button size='sm'>Start Session</Button>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className='text-gray-500 text-center py-8'>
+                      No sessions scheduled for today
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Upcoming Sessions</CardTitle>
-            <CardDescription>All your booked sessions</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className='space-y-4'>
-              {upcomingSessions.slice(0, 5).map((session) => (
-                <div
+            <Card>
+              <CardHeader>
+                <CardTitle>Upcoming Sessions</CardTitle>
+                <CardDescription>All your booked sessions</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className='space-y-4'>
+                  {upcomingSessions.slice(0, 5).map((session) => (
+                    <div
                       key={session.id}
-                  className='flex items-center justify-between p-4 border rounded-lg'
-                >
-                  <div className='space-y-1'>
-                    <h3 className='font-semibold'>{session.subject}</h3>
-                    <div className='flex items-center space-x-4 text-sm text-gray-600'>
-                      <span>📅 {session.date}</span>
-                      <span>🕐 {session.time}</span>
-                      <span>⏰ {session.duration}</span>
-                    </div>
-                  </div>
-                  <div className='flex items-center space-x-2'>
+                      className='flex items-center justify-between p-4 border rounded-lg'
+                    >
+                      <div className='space-y-1'>
+                        <h3 className='font-semibold'>{session.subject}</h3>
+                        <div className='flex items-center space-x-4 text-sm text-gray-600'>
+                          <span>📅 {session.date}</span>
+                          <span>🕐 {session.time}</span>
+                          <span>⏰ {session.duration}</span>
+                        </div>
+                      </div>
+                      <div className='flex items-center space-x-2'>
                         {getStatusBadge(session.status)}
                         {canEditOrDelete(session) && (
                           <>
@@ -333,7 +443,7 @@ const TutorDashboard = () => {
                               variant='outline'
                               size='sm'
                               onClick={() => setEditSession(session)}
-                    >
+                            >
                               <Edit className='h-4 w-4' />
                             </Button>
                             <Button
@@ -345,12 +455,12 @@ const TutorDashboard = () => {
                             </Button>
                           </>
                         )}
-                  </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* My Created Sessions Tab */}
@@ -374,7 +484,6 @@ const TutorDashboard = () => {
                             <span>📅 {session.date}</span>
                             <span>🕐 {session.time}</span>
                             <span>⏰ {session.duration}</span>
-                          
                           </div>
                         </div>
                         <div className='flex items-center space-x-2'>
@@ -420,7 +529,9 @@ const TutorDashboard = () => {
             <Card>
               <CardHeader>
                 <CardTitle>Slot Requests</CardTitle>
-                <CardDescription>Student requests for your time slots</CardDescription>
+                <CardDescription>
+                  Student requests for your time slots
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className='space-y-4'>
@@ -439,7 +550,6 @@ const TutorDashboard = () => {
                             <span>📅 {session.date}</span>
                             <span>🕐 {session.time}</span>
                             <span>⏰ {session.duration}</span>
-                           
                           </div>
                           {session.description && (
                             <p className='text-sm text-gray-500'>
@@ -455,7 +565,9 @@ const TutorDashboard = () => {
                                 variant='outline'
                                 size='sm'
                                 className='text-green-600 hover:text-green-700'
-                                onClick={() => approveSlotRequest(session.id, true)}
+                                onClick={() =>
+                                  approveSlotRequest(session.id, true)
+                                }
                               >
                                 Approve
                               </Button>
@@ -463,7 +575,9 @@ const TutorDashboard = () => {
                                 variant='outline'
                                 size='sm'
                                 className='text-red-600 hover:text-red-700'
-                                onClick={() => approveSlotRequest(session.id, false)}
+                                onClick={() =>
+                                  approveSlotRequest(session.id, false)
+                                }
                               >
                                 Reject
                               </Button>

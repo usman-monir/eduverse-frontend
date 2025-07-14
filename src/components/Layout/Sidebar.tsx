@@ -45,7 +45,6 @@ const Sidebar = () => {
 
   const tutorNavItems = [
     { path: '/tutor-dashboard', label: 'Dashboard', icon: Home },
-    { path: '/tutor/sessions', label: 'Sessions', icon: Calendar },
     { path: '/tutor/study-materials', label: 'Study Materials', icon: BookOpen },
   ];
 

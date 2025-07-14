@@ -180,14 +180,6 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
-      <Route
-        path='/tutor/sessions'
-        element={
-          <ProtectedRoute requireRole='tutor'>
-            <AdminSessions />
-          </ProtectedRoute>
-        }
-      />
       {/* Admin Routes */}
       <Route
         path='/admin-dashboard'

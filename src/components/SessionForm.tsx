@@ -218,7 +218,8 @@ const SessionForm = ({
               placeholder='Tutor name'
               required
               readOnly
-              className='bg-gray-50'
+              tabIndex={-1}
+              className='bg-gray-50 cursor-not-allowed'
             />
           ) : (
             <Input
@@ -233,7 +234,7 @@ const SessionForm = ({
 
         <div>
           <Label htmlFor='subject'>Subject</Label>
-          {(isAdmin || isTutor) ? (
+          {isAdmin ? (
             <div className='space-y-2'>
               {selectedTutorSubjects.length > 0 ? (
                 <Select
@@ -247,9 +248,7 @@ const SessionForm = ({
                     <SelectValue placeholder={
                       isAdmin && !formData.tutorId 
                         ? "Select tutor first" 
-                        : isTutor 
-                          ? "Select your subject" 
-                          : "Select subject"
+                        : "Select subject"
                     } />
                   </SelectTrigger>
                   <SelectContent>
@@ -267,18 +266,51 @@ const SessionForm = ({
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, subject: e.target.value }))
                   }
-                  placeholder={
-                    isTutor 
-                      ? 'Enter your subject (no subjects defined in profile)' 
-                      : 'Enter subject manually (tutor has no subjects defined)'
-                  }
+                  placeholder='Enter subject manually (tutor has no subjects defined)'
                   required
                 />
               )}
-              {(isAdmin && formData.tutorId && selectedTutorSubjects.length === 0) || 
-               (isTutor && selectedTutorSubjects.length === 0) ? (
+              {isAdmin && formData.tutorId && selectedTutorSubjects.length === 0 ? (
                 <p className='text-sm text-amber-600'>
-                  ⚠️ {isTutor ? 'You have no subjects defined in your profile.' : 'Selected tutor has no subjects defined.'} Please enter subject manually.
+                  ⚠️ Selected tutor has no subjects defined. Please enter subject manually.
+                </p>
+              ) : null}
+            </div>
+          ) : isTutor ? (
+            <div className='space-y-2'>
+              {user?.subjects && user.subjects.length > 0 ? (
+                <Select
+                  value={formData.subject}
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({ ...prev, subject: value }))
+                  }
+                  disabled={false}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder='Select your subject' />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {user.subjects.map((subject) => (
+                      <SelectItem key={subject} value={subject}>
+                        {subject}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input
+                  id='subject'
+                  value={formData.subject}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, subject: e.target.value }))
+                  }
+                  placeholder='Enter your subject (no subjects defined in profile)'
+                  required
+                />
+              )}
+              {user?.subjects && user.subjects.length === 0 ? (
+                <p className='text-sm text-amber-600'>
+                  ⚠️ You have no subjects defined in your profile. Please enter subject manually.
                 </p>
               ) : null}
             </div>

@@ -251,75 +251,73 @@ const SessionDetail = () => {
                     <p className="text-lg">{session.price ? `$${session.price}` : 'Free'}</p>
                   </div>
                 </div>
-                
                 {session.description && (
-                  <div>
+                  <div className="mt-4">
                     <Label className="text-sm font-medium text-gray-600">Description</Label>
-                    <p className="text-gray-700 mt-1">{session.description}</p>
+                    <p className="text-gray-700">{session.description}</p>
                   </div>
                 )}
+              </CardContent>
+            </Card>
 
-                {session.meetingLink && (
-                  <div>
-                    <Label className="text-sm font-medium text-gray-600">Meeting Link</Label>
-                    <div className="flex items-center space-x-2 mt-1">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => window.open(session.meetingLink, '_blank')}
-                      >
-                        <Video className="h-4 w-4 mr-2" />
-                        Join Meeting
-                      </Button>
+            {/* Enrolled Students Section */}
+            {(user.role === 'admin' || (user.role === 'tutor' && session.tutor._id === user._id) || (user.role === 'student' && session.enrolledStudents.some(e => e.studentId._id === user._id))) && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <Users className="h-5 w-5" />
+                    <span>Enrolled Students ({session.enrolledStudents.length})</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {session.enrolledStudents.length === 0 ? (
+                    <p className="text-gray-500">No students enrolled yet.</p>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead>
+                          <tr>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Enrolled At</th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-100">
+                          {session.enrolledStudents.map((enrollment) => (
+                            <tr key={enrollment.studentId._id}>
+                              <td className="px-4 py-2 whitespace-nowrap">{enrollment.studentId.name}</td>
+                              <td className="px-4 py-2 whitespace-nowrap">{enrollment.studentId.email}</td>
+                              <td className="px-4 py-2 whitespace-nowrap">{new Date(enrollment.enrolledAt).toLocaleString()}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
-            {/* Enrolled Students */}
-            <Card>
-              <CardContent>
-                {session.enrolledStudents.length > 0 ? (
-                  <div className="space-y-3">
-                    {session.enrolledStudents.map((enrollment, index) => (
-                      <div key={enrollment.studentId._id} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div className="flex items-center space-x-3">
-                          <Avatar>
-                            <AvatarImage src="" />
-                            <AvatarFallback>
-                              {enrollment.studentName.charAt(0).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium">{enrollment.studentName}</p>
-                            <p className="text-sm text-gray-600">{enrollment.studentId.email}</p>
-                            <p className="text-xs text-gray-500">
-                              Enrolled: {new Date(enrollment.enrolledAt).toLocaleDateString()}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          {enrollment.studentId.phone && (
-                            <Button variant="outline" size="sm">
-                              <Phone className="h-4 w-4" />
-                            </Button>
-                          )}
-                          <Button variant="outline" size="sm">
-                            <Mail className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <Users className="h-12 w-12 mx-auto text-gray-300 mb-4" />
-                    <p className="text-gray-500">No students enrolled yet</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            {/* Booking Status and Actions */}
+            {user.role === 'student' && (
+              <Card>
+                <CardContent className="space-y-4">
+                  {session.enrolledStudents.some(e => e.studentId._id === user._id) ? (
+                    <div className="flex items-center space-x-2">
+                      <CheckCircle className="h-5 w-5 text-green-600" />
+                      <span className="text-green-700 font-semibold">You are enrolled in this session.</span>
+                    </div>
+                  ) : session.status === 'available' || session.status === 'booked' ? (
+                    <Button variant="default" size="lg">
+                      Book Session
+                    </Button>
+                  ) : (
+                    <span className="text-gray-500">Booking is not available for this session.</span>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
           </div>
 
           {/* Sidebar */}
