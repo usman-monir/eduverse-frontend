@@ -42,7 +42,6 @@ const SessionForm = ({
     description: string;
     meetingLink: string;
     type: 'admin_created' | 'tutor_created' | 'slot_request';
-    maxStudents: number;
     tutorId?: string;
   }>({
     subject: '',
@@ -53,7 +52,6 @@ const SessionForm = ({
     description: '',
     meetingLink: '',
     type: 'admin_created',
-    maxStudents: 10,
     tutorId: '',
   });
 
@@ -138,7 +136,6 @@ const SessionForm = ({
         description: session.description || '',
         meetingLink: session.meetingLink || '',
         type: session.type,
-        maxStudents: session.maxStudents || 10,
         tutorId: session.tutorId || '',
       });
     } else if (defaultTutor && isAdmin) {
@@ -369,21 +366,6 @@ const SessionForm = ({
               <SelectItem value='cancelled'>Cancelled</SelectItem>
             </SelectContent>
           </Select>
-        </div>
-
-        <div>
-          <Label htmlFor='maxStudents'>Max Students</Label>
-          <Input
-            id='maxStudents'
-            type='number'
-            value={formData.maxStudents}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, maxStudents: parseInt(e.target.value) || 10 }))
-            }
-            placeholder='Maximum number of students'
-            min='1'
-            max='50'
-          />
         </div>
       </div>
 

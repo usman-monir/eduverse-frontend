@@ -500,11 +500,6 @@ const AdminSessions = () => {
                         </span>
                         <span>⏰ {session.duration}</span>
                       </div>
-                      {session.enrolledStudents && session.enrolledStudents.length > 0 && (
-                        <p className='text-sm text-blue-600'>
-                          Students: {session.enrolledStudents.length}/{session.maxStudents}
-                        </p>
-                      )}
                         </div>
                     </div>
                     <div className='flex items-center space-x-2'>
@@ -612,9 +607,6 @@ const AdminSessions = () => {
                               <span>📅 {session.date}</span>
                               <span>🕐 {session.time}</span>
                               <span>⏰ {session.duration}</span>
-                              {session.enrolledStudents && session.enrolledStudents.length > 0 && (
-                                <span>👨‍🎓 Students: {session.enrolledStudents.length}/{session.maxStudents}</span>
-                              )}
                             </div>
                           </div>
                           <div className='flex items-center space-x-2'>
@@ -669,9 +661,6 @@ const AdminSessions = () => {
                               <span>📅 {session.date}</span>
                               <span>🕐 {session.time}</span>
                               <span>⏰ {session.duration}</span>
-                              {session.enrolledStudents && session.enrolledStudents.length > 0 && (
-                                <span>👨‍🎓 Students: {session.enrolledStudents.length}/{session.maxStudents}</span>
-                              )}
                             </div>
                             {session.description && (
                               <p className='text-sm text-gray-500'>

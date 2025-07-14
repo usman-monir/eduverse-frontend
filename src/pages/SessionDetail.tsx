@@ -48,9 +48,6 @@ interface SessionDetail {
   duration: string;
   status: 'available' | 'booked' | 'completed' | 'cancelled' | 'pending' | 'approved';
   enrolledStudents: EnrolledStudent[];
-  maxStudents: number;
-  isFull: boolean;
-  availableSpots: number;
   enrollmentCount: number;
   meetingLink?: string;
   description?: string;
@@ -282,19 +279,6 @@ const SessionDetail = () => {
 
             {/* Enrolled Students */}
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Users className="h-5 w-5" />
-                  <span>Enrolled Students ({session.enrollmentCount}/{session.maxStudents})</span>
-                </CardTitle>
-                <CardDescription>
-                  {session.isFull ? (
-                    <span className="text-red-600">Session is full</span>
-                  ) : (
-                    <span className="text-green-600">{session.availableSpots} spots available</span>
-                  )}
-                </CardDescription>
-              </CardHeader>
               <CardContent>
                 {session.enrolledStudents.length > 0 ? (
                   <div className="space-y-3">
@@ -384,11 +368,7 @@ const SessionDetail = () => {
               <CardContent className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Enrollment</span>
-                  <span className="font-medium">{session.enrollmentCount}/{session.maxStudents}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Available Spots</span>
-                  <span className="font-medium">{session.availableSpots}</span>
+                  <span className="font-medium">{session.enrollmentCount}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Status</span>

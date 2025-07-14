@@ -288,7 +288,6 @@ const TutorDashboard = () => {
                       <div className='flex items-center space-x-4 text-sm text-gray-600'>
                         <span>🕐 {session.time}</span>
                         <span>⏰ {session.duration}</span>
-                        <span>👨‍🎓 Students: {session.enrolledStudents?.length || 0}/{session.maxStudents}</span>
                       </div>
                     </div>
                     <div className='flex items-center space-x-2'>
@@ -324,9 +323,6 @@ const TutorDashboard = () => {
                       <span>📅 {session.date}</span>
                       <span>🕐 {session.time}</span>
                       <span>⏰ {session.duration}</span>
-                      {session.enrolledStudents && session.enrolledStudents.length > 0 && (
-                        <span>👨‍🎓 Students: {session.enrolledStudents.length}/{session.maxStudents}</span>
-                      )}
                     </div>
                   </div>
                   <div className='flex items-center space-x-2'>
@@ -443,9 +439,7 @@ const TutorDashboard = () => {
                             <span>📅 {session.date}</span>
                             <span>🕐 {session.time}</span>
                             <span>⏰ {session.duration}</span>
-                            {session.enrolledStudents && session.enrolledStudents.length > 0 && (
-                              <span>👨‍🎓 Students: {session.enrolledStudents.length}/{session.maxStudents}</span>
-                            )}
+                           
                           </div>
                           {session.description && (
                             <p className='text-sm text-gray-500'>

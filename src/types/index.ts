@@ -47,9 +47,6 @@ export interface ClassSession {
     studentName: string;
     enrolledAt: string;
   }>;
-  maxStudents: number;
-  isFull: boolean;
-  availableSpots: number;
   enrollmentCount: number;
   meetingLink?: string;
   description?: string;
