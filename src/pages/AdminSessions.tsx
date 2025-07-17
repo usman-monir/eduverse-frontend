@@ -557,6 +557,18 @@ const AdminSessions = () => {
                                 👨‍🎓 Students: {session.students.length}
                               </div>
                             )}
+                            {(session.status === "approved" || session.status === "booked") && session.meetingLink && (
+                              <div className="text-sm text-blue-600 mt-1">
+                                <a
+                                  href={session.meetingLink}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="underline hover:text-blue-800"
+                                >
+                                  📎 Meeting Link
+                                </a>
+                              </div>
+                            )}
                           </div>
                         </div>
                         <div className="flex items-center space-x-2">
@@ -671,6 +683,18 @@ const AdminSessions = () => {
                                 </div>
                               )}
                             </div>
+                            {(session.status === "approved" || session.status === "booked") && session.meetingLink && (
+                              <div className="text-sm text-blue-600 mt-1">
+                                <a
+                                  href={session.meetingLink}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="underline hover:text-blue-800"
+                                >
+                                  📎 Meeting Link
+                                </a>
+                              </div>
+                            )}
                           </div>
                           <div className="flex items-center space-x-2">
                             {getStatusBadge(session.status)}
@@ -735,6 +759,18 @@ const AdminSessions = () => {
                               <p className="text-sm text-gray-500">
                                 📝 {session.description}
                               </p>
+                            )}
+                            {(session.status === "approved" || session.status === "booked") && session.meetingLink && (
+                              <div className="text-sm text-blue-600 mt-1">
+                                <a
+                                  href={session.meetingLink}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="underline hover:text-blue-800"
+                                >
+                                  📎 Meeting Link
+                                </a>
+                              </div>
                             )}
                           </div>
                           <div className="flex items-center space-x-2">

@@ -624,6 +624,18 @@ const TutorSession = () => {
                                   .join(", ")}
                               </div>
                             )}
+                            {(session.status === "approved" || session.status === "booked") && session.meetingLink && (
+                              <div className="text-sm text-blue-600 mt-1">
+                                <a
+                                  href={session.meetingLink}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="underline hover:text-blue-800"
+                                >
+                                  📎 Meeting Link
+                                </a>
+                              </div>
+                            )}
                           </div>
                         </div>
                         <div className="flex items-center space-x-2">
@@ -722,7 +734,8 @@ const TutorSession = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {filteredSessions.filter((s) => s.type === "slot_request")
+                  {filteredSessions
+                    .filter((s) => s.type === "slot_request")
                     .length > 0 ? (
                     filteredSessions
                       .filter((s) => s.type === "slot_request")
@@ -745,6 +758,18 @@ const TutorSession = () => {
                               <p className="text-sm text-gray-500">
                                 📝 {session.description}
                               </p>
+                            )}
+                            {(session.status === "approved" || session.status === "booked") && session.meetingLink && (
+                              <div className="text-sm text-blue-600 mt-1">
+                                <a
+                                  href={session.meetingLink}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="underline hover:text-blue-800"
+                                >
+                                  📎 Meeting Link
+                                </a>
+                              </div>
                             )}
                           </div>
                           <div className="flex items-center space-x-2">
