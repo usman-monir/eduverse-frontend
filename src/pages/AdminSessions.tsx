@@ -85,6 +85,7 @@ const AdminSessions = () => {
   );
   const [selectedSessions, setSelectedSessions] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState("all");
+  const [filterDate, setFilterDate] = useState("");
   const { toast } = useToast();
 
   // Filter sessions based on user role and current tab
@@ -137,6 +138,11 @@ const AdminSessions = () => {
               s.studentName?.toLowerCase().includes(searchTerm.toLowerCase())
           )
       );
+    }
+
+    // Date filtering
+    if (filterDate) {
+      filtered = filtered.filter((session) => session.date === filterDate);
     }
 
     return filtered;
@@ -320,6 +326,26 @@ const AdminSessions = () => {
               />
             </DialogContent>
           </Dialog>
+        </div>
+        {/* Date Filter */}
+        <div className="flex items-center gap-4">
+          <label className="font-medium">Filter by Date:</label>
+          <input
+            type="date"
+            value={filterDate}
+            onChange={(e) => setFilterDate(e.target.value)}
+            className="border-2 border-green-400 rounded px-3 py-1 focus:outline-none focus:ring-2 focus:ring-green-300 bg-green-50 text-green-900 font-semibold shadow-sm transition-all"
+          />
+          {filterDate && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-green-400 text-green-700 hover:bg-green-100"
+              onClick={() => setFilterDate("")}
+            >
+              Clear Date
+            </Button>
+          )}
         </div>
 
         {/* Stats Cards */}
@@ -583,7 +609,13 @@ const AdminSessions = () => {
                                 }}
                               >
                                 <DialogTrigger asChild>
-                                  
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setEditingSession(session)}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
                                 </DialogTrigger>
                                 <DialogContent className="max-w-2xl">
                                   <DialogHeader>
@@ -593,7 +625,7 @@ const AdminSessions = () => {
                                     </DialogDescription>
                                   </DialogHeader>
                                   <SessionForm
-                                    // session={session}
+                                    session={editingSession}
                                     onSubmit={handleUpdateSession}
                                     onCancel={() => setEditingSession(null)}
                                     // isAdmin={user?.role === "admin"}

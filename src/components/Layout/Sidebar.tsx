@@ -56,7 +56,6 @@ const Sidebar = () => {
 
   const adminNavItems = [
     { path: "/admin-dashboard", label: "Dashboard", icon: Home },
-    { path: "/admin/sessions", label: "Sessions", icon: Calendar },
     { path: "/admin/subjects", label: "Subjects", icon: BookOpen },
     { path: "/admin/study-materials", label: "Study Material", icon: BookOpen },
     { path: "/send-invite", label: "Send Invite", icon: BookOpen },

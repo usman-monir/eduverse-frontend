@@ -50,12 +50,13 @@ interface SessionFormProps {
     sessionData: Omit<ClassSession, "id" | "createdAt" | "updatedAt">
   ) => void;
   onCancel: () => void;
+  session?: ClassSession;
 }
 
-const SessionForm = ({ onSubmit, onCancel }: SessionFormProps) => {
+const SessionForm = ({ onSubmit, onCancel, session }: SessionFormProps) => {
   const [tutors, setTutors] = useState<any[]>([]);
-  const [tutorId, setTutorId] = useState("");
-  const [tutorName, setTutorName] = useState("");
+  const [tutorId, setTutorId] = useState(session?.tutorId || session?.tutor || "");
+  const [tutorName, setTutorName] = useState(session?.tutorName || "");
   const [availability, setAvailability] = useState<Record<
     Weekday,
     { start: string; end: string }
@@ -65,12 +66,22 @@ const SessionForm = ({ onSubmit, onCancel }: SessionFormProps) => {
     { date: string; time: string }[]
   >([]);
 
-  const [selectedDay, setSelectedDay] = useState<Weekday | "">("");
-  const [selectedDate, setSelectedDate] = useState("");
+  const [selectedDay, setSelectedDay] = useState<Weekday | "">(session ? (session.date ? (new Date(session.date).toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase() as Weekday) : "") : "");
+  const [selectedDate, setSelectedDate] = useState(session?.date || "");
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
   const [loadingTutorData, setLoadingTutorData] = useState(false);
   const [generatingAllLinks, setGeneratingAllLinks] = useState(false);
   const [createdSessions, setCreatedSessions] = useState<any[]>([]); // Track created sessions
+
+  // Prefill logic for edit mode
+  useEffect(() => {
+    if (session) {
+      setTutorId(session.tutorId || session.tutor || "");
+      setTutorName(session.tutorName || "");
+      setSelectedDate(session.date || "");
+      setSelectedDay(session.date ? (new Date(session.date).toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase() as Weekday) : "");
+    }
+  }, [session]);
 
   const refreshExistingSessions = async () => {
     if (!tutorId) return;

@@ -672,6 +672,7 @@ const TutorSession = () => {
                                     </DialogDescription>
                                   </DialogHeader>
                                   <SessionForm
+                                    session={editingSession}
                                     onSubmit={handleUpdateSession}
                                     onCancel={() => setEditingSession(null)}
                                   />

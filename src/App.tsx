@@ -184,15 +184,7 @@ const AppRoutes = () => {
         path='/admin-dashboard'
         element={
           <ProtectedRoute requireRole='admin'>
-            <AdminDashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path='/admin/sessions'
-        element={
-          <ProtectedRoute requireRole='admin'>
-            <AdminSessions />
+             <AdminSessions />
           </ProtectedRoute>
         }
       />
