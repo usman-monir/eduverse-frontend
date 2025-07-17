@@ -18,7 +18,6 @@ import StudyMaterials from './pages/StudyMaterials';
 import BookClass from './pages/BookSession';
 import RequestSlot from './pages/RequestSlot';
 import Messages from './pages/Messages';
-import AdminDashboard from './pages/AdminDashboard';
 import AdminSessions from './pages/AdminSessions';
 import AdminUsers from './pages/AdminUsers';
 import AdminSubjects from './pages/AdminSubjects';

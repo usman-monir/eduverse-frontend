@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { Label } from "recharts";
-import { X } from "lucide-react";
 import { useSessionManager } from "@/hooks/useSessionManager";
 import { ClassSession } from "@/types";
 import { Save } from "lucide-react";
@@ -63,8 +61,18 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import AdminManageTutorAvailability from "./AdminManageTutorAvailability";
+import { updateSessionStatus } from "@/services/api";
  
  
+const SESSION_STATUSES = [
+  "available",
+  "booked",
+  "completed",
+  "cancelled",
+  "pending",
+  "approved",
+] as const;
+
 const AdminSessions = () => {
   const {
     sessions,
@@ -74,6 +82,7 @@ const AdminSessions = () => {
     updateSession,
     deleteSession,
     approveSlotRequest,
+    fetchSessions,
   } = useSessionManager();
   const { user } = useAuth();
   const [filterStatus, setFilterStatus] = useState("all");
@@ -87,6 +96,32 @@ const AdminSessions = () => {
   const [activeTab, setActiveTab] = useState("all");
   const [filterDate, setFilterDate] = useState("");
   const { toast } = useToast();
+  // Add a loading state for status update
+  const [statusUpdatingId, setStatusUpdatingId] = useState<string | null>(null);
+
+  // Add a function to update session status
+  const handleChangeStatus = async (
+    sessionId: string,
+    newStatus: "pending" | "available" | "booked" | "completed" | "approved" | "cancelled"
+  ) => {
+    setStatusUpdatingId(sessionId);
+    try {
+      await updateSessionStatus(sessionId, newStatus);
+      await fetchSessions(); // Refresh sessions from backend
+      toast({
+        title: "Status Updated",
+        description: `Session status changed to ${newStatus}.`,
+      });
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to update session status.",
+        variant: "destructive",
+      });
+    } finally {
+      setStatusUpdatingId(null);
+    }
+  };
 
   // Filter sessions based on user role and current tab
   const getFilteredSessions = () => {
@@ -600,6 +635,22 @@ const AdminSessions = () => {
                         <div className="flex items-center space-x-2">
                           {getStatusBadge(session.status)}
                           {getTypeBadge(session.type)}
+                          <Select
+                            value={session.status}
+                            onValueChange={(value) => handleChangeStatus(session.id, value as "pending" | "available" | "booked" | "completed" | "approved" | "cancelled")}
+                            disabled={statusUpdatingId === session.id}
+                          >
+                            <SelectTrigger className="w-[90px] h-8 text-xs border-green-400 focus:ring-green-300 px-2 py-1">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {SESSION_STATUSES.map((status) => (
+                                <SelectItem key={status} value={status} className="text-xs">
+                                  {status.charAt(0).toUpperCase() + status.slice(1)}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                           {canEditOrDelete(session) && (
                             <>
                               <Dialog

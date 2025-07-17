@@ -113,22 +113,6 @@ const BookSession = () => {
     }
   };
 
-  // Helper function to check if user already has booking on the same day
-  const hasBookingOnSameDay = (sessionDate: string) => {
-    try {
-      const sessionDay = new Date(sessionDate);
-      if (!Array.isArray(userBookings)) return false;
-
-      return userBookings.some((booking) => {
-        const bookingDate = new Date(booking.date);
-        return isSameDay(bookingDate, sessionDay);
-      });
-    } catch (error) {
-      console.error("Error checking same day booking:", error);
-      return false;
-    }
-  };
-
   // Group sessions by date and tutor, excluding booked sessions
   const sessionsByDateAndTutor = sessions.reduce((acc, session) => {
     if (session.status === "available") {
@@ -428,12 +412,6 @@ const BookSession = () => {
                     Tutor indicator
                   </span>
                 </div>
-                <div className="flex items-center space-x-1">
-                  <Badge className="bg-green-500 text-white text-xs px-1 py-0.5">
-                    3
-                  </Badge>
-                  <span className="text-sm text-green-700">Session count</span>
-                </div>
               </div>
             </div>
           </CardContent>
@@ -484,7 +462,6 @@ const BookSession = () => {
                   selected={selectedDate}
                   onSelect={handleDateSelect}
                   className="rounded-md border"
-                  dayContent={renderCalendarDay}
                   modifiers={{
                     hasSessions: datesWithSessions,
                   }}
@@ -603,8 +580,8 @@ const BookSession = () => {
                           <User className="h-5 w-5 mr-2" />
                           {tutorName}
                           <Badge className="ml-2 bg-blue-100 text-blue-800">
-                            {tutorSessions.length} session
-                            {tutorSessions.length > 1 ? "s" : ""}
+                            {tutorSessions?.length} session
+                            {tutorSessions?.length > 1 ? "s" : ""}
                           </Badge>
                         </h3>
 

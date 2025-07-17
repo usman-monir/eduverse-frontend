@@ -301,7 +301,7 @@ const StudentDashboard = () => {
                     <span>⏰ {nextClass.duration}</span>
                   </div>
                 </div>
-                <Button>Join Class</Button>
+                <Button onClick={() => window.open(nextClass.meetingLink, "_blank")}>Join Class</Button>
               </div>
             </CardContent>
           </Card>

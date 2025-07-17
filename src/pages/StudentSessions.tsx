@@ -20,35 +20,10 @@ import {
   Loader2,
 } from "lucide-react";
 import { getMySessions } from "@/services/api";
-
-interface Session {
-  _id: string;
-  subject: string;
-  tutor: {
-    _id: string;
-    name: string;
-    email: string;
-  };
-  tutorName: string;
-  date: string;
-  time: string;
-  duration: string;
-  status: "available" | "booked" | "completed" | "cancelled";
-  studentId?: {
-    _id: string;
-    name: string;
-    email: string;
-  };
-  studentName?: string;
-  meetingLink?: string;
-  description?: string;
-  price?: number;
-  createdAt: string;
-  updatedAt: string;
-}
+import { ClassSession } from "@/types";
 
 const StudentSessions = () => {
-  const [sessions, setSessions] = useState<Session[]>([]);
+  const [sessions, setSessions] = useState<ClassSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<
     "upcoming" | "completed" | "cancelled"
@@ -142,7 +117,7 @@ const StudentSessions = () => {
     return false;
   });
 
-  const SessionCard = ({ session }: { session: Session }) => (
+  const SessionCard = ({ session }: { session: ClassSession }) => (
     <Card className="hover:shadow-md transition-shadow">
       <CardHeader>
         <div className="flex items-center justify-between">
@@ -151,7 +126,7 @@ const StudentSessions = () => {
             <div>
               <CardTitle className="text-lg">{session.subject}</CardTitle>
               <CardDescription>
-                with {session.tutor?.name || session.tutorName}
+                with {session.tutorName}
               </CardDescription>
             </div>
           </div>
@@ -295,7 +270,7 @@ const StudentSessions = () => {
         <div className="space-y-4">
           {filteredSessions.length > 0 ? (
             filteredSessions.map((session) => (
-              <SessionCard key={session._id} session={session} />
+              <SessionCard key={session.id} session={session} />
             ))
           ) : (
             <Card>

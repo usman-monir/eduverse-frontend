@@ -52,7 +52,7 @@ export interface ClassSession {
   studentId?: string;
   meetingLink?: string;
   description?: string;
-  type: 'admin_created' | 'tutor_created' | 'slot_request';
+  type?: 'admin_created' | 'tutor_created' | 'slot_request';
   students: Student[];
   createdBy: string;
   createdAt: string;
