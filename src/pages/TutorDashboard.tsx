@@ -149,25 +149,25 @@ const TutorDashboard = () => {
     await addSession(sessionData);
     setShowCreate(false);
   };
-const formatTime = (time: string) => {
-  const [hour, minute] = time.split(":").map(Number);
-  const date = new Date();
-  date.setHours(hour);
-  date.setMinutes(minute);
-  return date.toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true,
-  });
-};
-const formatDate = (dateStr: string) => {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString("en-US", {
-    month: "short", // "Dec"
-    day: "2-digit", // "12"
-    year: "numeric", // "2025"
-  });
-};
+  const formatTime = (time: string) => {
+    const [hour, minute] = time.split(":").map(Number);
+    const date = new Date();
+    date.setHours(hour);
+    date.setMinutes(minute);
+    return date.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString("en-US", {
+      month: "short", // "Dec"
+      day: "2-digit", // "12"
+      year: "numeric", // "2025"
+    });
+  };
 
   const handleEditSession = async (sessionData: any) => {
     if (editSession) {
@@ -379,12 +379,16 @@ const formatDate = (dateStr: string) => {
                         <div className="space-y-1">
                           <h3 className="font-semibold">{session.subject}</h3>
                           <div className="flex items-center space-x-4 text-sm text-gray-600">
-                           <span>🕐 {formatTime(session.time)}</span>
+                            <span>🕐 {formatTime(session.time)}</span>
 
                             <span>⏰ {session.duration}</span>
                             {session.students?.length > 0 && (
                               <div className="text-sm text-blue-600">
-                                👨‍🎓 Students: {session.students[0].studentName}
+                                👨‍🎓 Student
+                                {session.students.length > 1 ? "s" : ""}:{" "}
+                                {session.students
+                                  .map((s) => s.studentName)
+                                  .join(", ")}
                               </div>
                             )}
                           </div>
@@ -431,13 +435,17 @@ const formatDate = (dateStr: string) => {
                       <div className="space-y-1">
                         <h3 className="font-semibold">{session.subject}</h3>
                         <div className="flex items-center space-x-4 text-sm text-gray-600">
-                         <span>📅 {formatDate(session.date)}</span>
+                          <span>📅 {formatDate(session.date)}</span>
 
                           <span>🕐 {formatTime(session.time)}</span>
                           <span>⏰ {session.duration}</span>
                           {session.students?.length > 0 && (
                             <div className="text-sm text-blue-600">
-                              👨‍🎓 Students: {session.students.length}
+                              👨‍🎓 Student{session.students.length > 1 ? "s" : ""}
+                              :{" "}
+                              {session.students
+                                .map((s) => s.studentName)
+                                .join(", ")}
                             </div>
                           )}
                         </div>

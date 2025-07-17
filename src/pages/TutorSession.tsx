@@ -145,24 +145,24 @@ const TutorSession = () => {
   };
 
   const formatDate = (dateStr: string) => {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString("en-US", {
-    month: "short", // "Dec"
-    day: "2-digit", // "12"
-    year: "numeric", // "2025"
-  });
-};
-const formatTime = (time: string) => {
-  const [hour, minute] = time.split(":").map(Number);
-  const date = new Date();
-  date.setHours(hour);
-  date.setMinutes(minute);
-  return date.toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true,
-  });
-};
+    const date = new Date(dateStr);
+    return date.toLocaleDateString("en-US", {
+      month: "short", // "Dec"
+      day: "2-digit", // "12"
+      year: "numeric", // "2025"
+    });
+  };
+  const formatTime = (time: string) => {
+    const [hour, minute] = time.split(":").map(Number);
+    const date = new Date();
+    date.setHours(hour);
+    date.setMinutes(minute);
+    return date.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
   // Available slots state
   const [availableSlots, setAvailableSlots] = useState<AvailableSlot[]>([]);
   const [slotsLoading, setSlotsLoading] = useState(false);
@@ -259,7 +259,7 @@ const formatTime = (time: string) => {
       });
     }
   };
-    const isTutorMatch = (session: any) => {
+  const isTutorMatch = (session: any) => {
     // Prefer matching by user id if available, fallback to name
     if (user?._id && session.tutorId) return session.tutorId === user._id;
     return session.tutor === user?.name;
@@ -618,7 +618,11 @@ const formatTime = (time: string) => {
                             </div>
                             {session.students?.length > 0 && (
                               <div className="text-sm text-blue-600">
-                                👨‍🎓 Students: {session.students.length}
+                                👨‍🎓 Student
+                                {session.students.length > 1 ? "s" : ""}:{" "}
+                                {session.students
+                                  .map((s) => s.studentName)
+                                  .join(", ")}
                               </div>
                             )}
                           </div>
