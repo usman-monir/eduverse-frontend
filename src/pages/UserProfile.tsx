@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { getProfile, updateProfile, changePassword } from '@/services/api';
+import { getProfile, updateProfile, changePassword, getSubjects } from '@/services/api';
 import {
   Card,
   CardContent,
@@ -16,7 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
 import DashboardLayout from '@/components/Layout/DashboardLayout';
-import { User, Lock, GraduationCap, Phone, Mail, Calendar, Shield } from 'lucide-react';
+import { User, Lock, GraduationCap, Phone, Mail, Calendar, Shield, X } from 'lucide-react';
 
 interface ProfileForm {
   name: string;
@@ -37,9 +37,6 @@ const UserProfile = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [profileData, setProfileData] = useState<any>(null);
-  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
-  const [isChangingPassword, setIsChangingPassword] = useState(false);
-
   const profileForm = useForm<ProfileForm>({
     defaultValues: {
       name: '',
@@ -50,6 +47,11 @@ const UserProfile = () => {
     },
     mode: 'onChange',
   });
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [subjects, setSubjects] = useState<any[]>([]);
+  const [selectedSubjects, setSelectedSubjects] = useState<string[]>(profileForm.getValues('subjects') || []);
+  const [loadingSubjects, setLoadingSubjects] = useState(false);
 
   const fetchProfile = async () => {
     try {
@@ -90,6 +92,33 @@ const UserProfile = () => {
   useEffect(() => {
     fetchProfile();
   }, []);
+
+  useEffect(() => {
+    const fetchSubjects = async () => {
+      setLoadingSubjects(true);
+      try {
+        const response = await getSubjects();
+        setSubjects(response.data.data || []);
+      } catch (e) {
+        setSubjects([]);
+      } finally {
+        setLoadingSubjects(false);
+      }
+    };
+    fetchSubjects();
+  }, []);
+
+  const addSubject = (subjectName: string) => {
+    if (!selectedSubjects.includes(subjectName)) {
+      setSelectedSubjects([...selectedSubjects, subjectName]);
+      profileForm.setValue('subjects', [...selectedSubjects, subjectName]);
+    }
+  };
+  const removeSubject = (subjectName: string) => {
+    const updated = selectedSubjects.filter((s) => s !== subjectName);
+    setSelectedSubjects(updated);
+    profileForm.setValue('subjects', updated);
+  };
 
   const onProfileSubmit = async (data: ProfileForm) => {
     setIsUpdatingProfile(true);
@@ -193,6 +222,19 @@ const UserProfile = () => {
       default:
         return <User className="h-5 w-5" />;
     }
+  };
+
+  const getCategoryColor = (category: string) => {
+    const colors: { [key: string]: string } = {
+      'Science': 'bg-blue-100 text-blue-800',
+      'Mathematics': 'bg-purple-100 text-purple-800',
+      'Language': 'bg-green-100 text-green-800',
+      'Arts': 'bg-pink-100 text-pink-800',
+      'Social Studies': 'bg-orange-100 text-orange-800',
+      'Computer Science': 'bg-indigo-100 text-indigo-800',
+      'Other': 'bg-gray-100 text-gray-800',
+    };
+    return colors[category] || colors['Other'];
   };
 
   if (loading) {
@@ -324,27 +366,57 @@ const UserProfile = () => {
                           )}
                         />
 
-                        <FormField
-                          control={profileForm.control}
-                          name="subjects"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Subjects</FormLabel>
-                              <FormControl>
-                                <Input 
-                                  placeholder="e.g., Mathematics, Physics, Chemistry" 
-                                  {...field}
-                                  value={Array.isArray(field.value) ? field.value.join(', ') : ''}
-                                  onChange={(e) => {
-                                    const subjects = e.target.value.split(',').map(s => s.trim()).filter(s => s);
-                                    field.onChange(subjects);
-                                  }}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
+                        {/* Subjects Dropdown Multi-Select */}
+                        <div>
+                          <label htmlFor='subjects' className='block font-medium mb-1'>Subjects</label>
+                          {loadingSubjects ? (
+                            <div className='mt-1 p-3 border rounded-md bg-gray-50 text-gray-500'>Loading subjects...</div>
+                          ) : (
+                            <div className='mt-1 space-y-2'>
+                              {/* Selected Subjects */}
+                              {selectedSubjects.length > 0 && (
+                                <div className='flex flex-wrap gap-2'>
+                                  {selectedSubjects.map((subjectName) => {
+                                    const subject = subjects.find(s => s.name === subjectName);
+                                    return (
+                                      <Badge key={subjectName} className={`${getCategoryColor(subject?.category || 'Other')} flex items-center gap-1`}>
+                                        {subjectName}
+                                        <button
+                                          type='button'
+                                          onClick={() => removeSubject(subjectName)}
+                                          className='ml-1 hover:bg-black/10 rounded-full p-0.5'
+                                        >
+                                          <X className='h-3 w-3' />
+                                        </button>
+                                      </Badge>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                              {/* Available Subjects */}
+                              <div className='border rounded-md p-3 max-h-40 overflow-y-auto'>
+                                <p className='text-sm text-gray-600 mb-2'>Click to select subjects:</p>
+                                <div className='space-y-1'>
+                                  {subjects
+                                    .filter(subject => !selectedSubjects.includes(subject.name))
+                                    .map((subject) => (
+                                      <button
+                                        key={subject._id}
+                                        type='button'
+                                        onClick={() => addSubject(subject.name)}
+                                        className='w-full text-left p-2 hover:bg-gray-100 rounded-md flex items-center justify-between'
+                                      >
+                                        <span className='font-medium'>{subject.name}</span>
+                                        <Badge className={getCategoryColor(subject.category)}>
+                                          {subject.category}
+                                        </Badge>
+                                      </button>
+                                    ))}
+                                </div>
+                              </div>
+                            </div>
                           )}
-                        />
+                        </div>
                       </>
                     )}
 
