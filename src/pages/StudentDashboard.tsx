@@ -45,6 +45,25 @@ const StudentDashboard = () => {
       sessionStudentId === userId
     );
   });
+  const formatTime = (time: string) => {
+    const [hour, minute] = time.split(":").map(Number);
+    const date = new Date();
+    date.setHours(hour);
+    date.setMinutes(minute);
+    return date.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString("en-US", {
+      month: "short", // "Dec"
+      day: "2-digit", // "12"
+      year: "numeric", // "2025"
+    });
+  };
 
   // Filter sessions for different views
   const myBookedSessions = sessions.filter((session) => {
@@ -277,8 +296,8 @@ const StudentDashboard = () => {
                       : (nextClass.tutor as any)?.name || "Unknown Tutor"}
                   </p>
                   <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500">
-                    <span>📅 {nextClass.date}</span>
-                    <span>🕐 {nextClass.time}</span>
+                    <span>📅 {formatDate(nextClass.date)}</span>
+                    <span>🕐 {formatTime(nextClass.time)}</span>
                     <span>⏰ {nextClass.duration}</span>
                   </div>
                 </div>
@@ -393,8 +412,8 @@ const StudentDashboard = () => {
                                   (session.tutor as any)?.name ||
                                   "Unknown Tutor"}
                             </span>
-                            <span>📅 {session.date}</span>
-                            <span>🕐 {session.time}</span>
+                            <span>📅 {formatDate(session.date)}</span>
+                            <span>🕐 {formatTime(session.time)}</span>
                             <span>⏰ {session.duration}</span>
                           </div>
                           {session.description && (

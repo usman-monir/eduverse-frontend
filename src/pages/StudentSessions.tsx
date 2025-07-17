@@ -77,26 +77,32 @@ const StudentSessions = () => {
     }
   };
 
+  const formatDuration = (duration: string | number | undefined): string => {
+    if (!duration) return "";
+    const num =
+      typeof duration === "string" ? parseInt(duration, 10) : duration;
+    return `${num} minutes`;
+  };
 
-const formatTime = (time: string) => {
-  const [hour, minute] = time.split(":").map(Number);
-  const date = new Date();
-  date.setHours(hour);
-  date.setMinutes(minute);
-  return date.toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true,
-  });
-};
-const formatDate = (dateStr: string) => {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString("en-US", {
-    month: "short", // "Dec"
-    day: "2-digit", // "12"
-    year: "numeric", // "2025"
-  });
-};
+  const formatTime = (time: string) => {
+    const [hour, minute] = time.split(":").map(Number);
+    const date = new Date();
+    date.setHours(hour);
+    date.setMinutes(minute);
+    return date.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString("en-US", {
+      month: "short", // "Dec"
+      day: "2-digit", // "12"
+      year: "numeric", // "2025"
+    });
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -161,7 +167,7 @@ const formatDate = (dateStr: string) => {
           <div className="flex items-center space-x-2 text-sm text-gray-600">
             <Clock className="h-4 w-4" />
             <span>
-              {formatTime(session.time)} ({session.duration})
+              {formatTime(session.time)} ({formatDuration(session.duration)})
             </span>
           </div>
           {session.meetingLink && (
@@ -177,17 +183,18 @@ const formatDate = (dateStr: string) => {
           )}
         </div>
 
-       {(session.status === "booked" || session.status === "approved") && session.meetingLink && (
-          <div className="mt-4">
-            <Button
-              className="w-full"
-              onClick={() => window.open(session.meetingLink, "_blank")}
-            >
-              <Video className="h-4 w-4 mr-2" />
-              Join Class
-            </Button>
-          </div>
-        )}
+        {(session.status === "booked" || session.status === "approved") &&
+          session.meetingLink && (
+            <div className="mt-4">
+              <Button
+                className="w-full"
+                onClick={() => window.open(session.meetingLink, "_blank")}
+              >
+                <Video className="h-4 w-4 mr-2" />
+                Join Class
+              </Button>
+            </div>
+          )}
       </CardContent>
     </Card>
   );
