@@ -285,6 +285,14 @@ export const sendBulkInvitations = async (data: { students: { name: string; emai
   return api.post('/email/bulk-invite', data);
 };
 
+export const restrictStudentAccess = async (userId: string, accessTill: string) => {
+  return api.put(`/admin/users/${userId}/restrict-access`, { accessTill });
+};
+
+export const enableStudentAccess = async (userId: string) => {
+  return api.put(`/admin/users/${userId}/enable-access`);
+};
+
 export default api;
 
 

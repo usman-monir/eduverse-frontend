@@ -43,10 +43,14 @@ const Login = () => {
         description: 'Welcome back to EduPortal!',
       });
       // Navigation is handled by useEffect
-    } catch (error) {
+    } catch (error: any) {
+      let errorMessage = 'Please check your credentials and try again.';
+      if (error?.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
       toast({
         title: 'Login failed',
-        description: 'Please check your credentials and try again.',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {

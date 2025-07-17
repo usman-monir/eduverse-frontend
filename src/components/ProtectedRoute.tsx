@@ -8,7 +8,7 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute = ({ children, requireRole }: ProtectedRouteProps) => {
-  const { isAuthenticated, user, loading } = useAuth();
+  const { isAuthenticated, user, loading, logout } = useAuth();
 
   if (loading) {
     // Optionally, render a spinner here
@@ -17,6 +17,16 @@ const ProtectedRoute = ({ children, requireRole }: ProtectedRouteProps) => {
 
   if (!isAuthenticated) {
     return <Navigate to='/login' replace />;
+  }
+
+  // Restrict access for students if accessTill is set and expired
+  if (user?.role !== 'admin' && user.accessTill) {
+    const now = new Date();
+    const accessTill = new Date(user.accessTill);
+    if (now > accessTill) {
+      if (logout) logout();
+      return <Navigate to='/login' replace state={{ message: 'Your access has been restricted by the admin. Please contact support.' }} />;
+    }
   }
 
   if (requireRole && user?.role !== requireRole) {

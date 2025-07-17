@@ -8,6 +8,7 @@ export interface User {
   phone?: string;
   grade?: string;
   subjects?: string[];
+  accessTill?: string;
 }
 
 export interface Subject {

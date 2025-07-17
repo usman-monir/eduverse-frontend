@@ -12,9 +12,10 @@ import DashboardLayout from '@/components/Layout/DashboardLayout';
 import { UserPlus, Mail, Users, GraduationCap } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useToast } from '@/hooks/use-toast';
-import { getAdminUsers, approveUser, inviteUser } from '@/services/api';
+import { getAdminUsers, approveUser, inviteUser, restrictStudentAccess, enableStudentAccess } from '@/services/api';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { format } from 'date-fns';
 
 interface InviteForm {
   name: string;
@@ -49,6 +50,9 @@ const AdminUsers = () => {
   const [tutors, setTutors] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const [restrictDialogOpen, setRestrictDialogOpen] = useState<string | null>(null);
+  const [restrictDate, setRestrictDate] = useState<string>('');
+  const [restrictingId, setRestrictingId] = useState<string | null>(null);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -153,6 +157,47 @@ const AdminUsers = () => {
         description: "Failed to approve user. Please try again.",
         variant: "destructive"
       });
+    }
+  };
+
+  const handleRestrictAccess = async (userId: string) => {
+    setRestrictingId(userId);
+    try {
+      await restrictStudentAccess(userId, restrictDate);
+      toast({
+        title: 'Access Restricted',
+        description: 'Student access has been restricted.',
+      });
+      setRestrictDialogOpen(null);
+      setRestrictDate('');
+      await fetchUsers();
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to restrict access.',
+        variant: 'destructive',
+      });
+    } finally {
+      setRestrictingId(null);
+    }
+  };
+  const handleEnableAccess = async (userId: string) => {
+    setRestrictingId(userId);
+    try {
+      await enableStudentAccess(userId);
+      toast({
+        title: 'Access Enabled',
+        description: 'Student access has been enabled.',
+      });
+      await fetchUsers();
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to enable access.',
+        variant: 'destructive',
+      });
+    } finally {
+      setRestrictingId(null);
     }
   };
 
@@ -424,6 +469,9 @@ const AdminUsers = () => {
                       <h3 className="font-semibold">{user.name}</h3>
                       <p className="text-sm text-gray-600">{user.email}</p>
                         <p className="text-xs text-gray-500">Joined: {user.joinedDate ? new Date(user.joinedDate).toLocaleDateString() : ''}</p>
+                        {user.role === 'student' && user.accessTill && (
+                          <p className="text-xs text-red-600 font-semibold">Restricted until: {format(new Date(user.accessTill), 'yyyy-MM-dd HH:mm')}</p>
+                        )}
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
@@ -439,6 +487,53 @@ const AdminUsers = () => {
                       <Button variant="outline" size="sm" onClick={() => navigate(`/admin/users/${user._id}`)}>
                         View Profile
                     </Button>
+                    {user.role !== 'admin' && (
+                      <>
+                        <Dialog open={restrictDialogOpen === user._id} onOpenChange={(open) => setRestrictDialogOpen(open ? user._id : null)}>
+                          <DialogTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              Restrict Access
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Restrict Access</DialogTitle>
+                              <DialogDescription>
+                                Set a date and time until which this student cannot access the platform.
+                              </DialogDescription>
+                            </DialogHeader>
+                            <Input
+                              type="datetime-local"
+                              value={restrictDate}
+                              onChange={(e) => setRestrictDate(e.target.value)}
+                              className="mb-4"
+                            />
+                            <div className="flex justify-end space-x-2">
+                              <Button variant="outline" onClick={() => setRestrictDialogOpen(null)}>
+                                Cancel
+                              </Button>
+                              <Button
+                                onClick={() => handleRestrictAccess(user._id)}
+                                disabled={restrictingId === user._id || !restrictDate}
+                              >
+                                {restrictingId === user._id ? 'Restricting...' : 'Restrict'}
+                              </Button>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                        {user.accessTill && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-green-700 border-green-400"
+                            onClick={() => handleEnableAccess(user._id)}
+                            disabled={restrictingId === user._id}
+                          >
+                            {restrictingId === user._id ? 'Enabling...' : 'Enable Access'}
+                          </Button>
+                        )}
+                      </>
+                    )}
                   </div>
                 </div>
               ))}
