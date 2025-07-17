@@ -91,7 +91,7 @@ const TutorDashboard = () => {
 
     setSlotsLoading(true);
     try {
-      const response = await fetch(`http://localhost:5050/api/tutors/my`);
+      const response = await fetch( `${import.meta.env.VITE_API_BASE_URL}/tutors/my`);
       if (response.ok) {
         const data = await response.json();
         setAvailableSlots(data.existingSessions);
@@ -316,8 +316,6 @@ const TutorDashboard = () => {
               <SessionForm
                 onSubmit={handleCreateSession}
                 onCancel={() => setShowCreate(false)}
-                defaultTutor={user?.name}
-                isTutor={true}
               />
             </div>
           </div>
@@ -329,10 +327,8 @@ const TutorDashboard = () => {
             <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-lg">
               <h2 className="text-xl font-bold mb-4">Edit Session</h2>
               <SessionForm
-                session={editSession}
                 onSubmit={handleEditSession}
                 onCancel={() => setEditSession(null)}
-                isTutor={true}
               />
             </div>
           </div>
@@ -373,7 +369,7 @@ const TutorDashboard = () => {
                   {todaySessions.length > 0 ? (
                     todaySessions.map((session) => (
                       <div
-                        key={session._id || session.id}
+                        key={session.id}
                         className="flex items-center justify-between p-4 border rounded-lg"
                       >
                         <div className="space-y-1">
@@ -685,7 +681,7 @@ const TutorDashboard = () => {
         </Tabs>
 
         {/* Add Slot Dialog */}
-        {showAddSlot && (
+        {/* {showAddSlot && (
           <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-lg">
               <h2 className="text-xl font-bold mb-4">Add New Slot</h2>
@@ -752,10 +748,10 @@ const TutorDashboard = () => {
               </form>
             </div>
           </div>
-        )}
+        )} */}
 
         {/* Edit Slot Dialog */}
-        {editingSlot && (
+        {/* {editingSlot && (
           <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-lg">
               <h2 className="text-xl font-bold mb-4">Edit Slot</h2>
@@ -822,7 +818,7 @@ const TutorDashboard = () => {
               </form>
             </div>
           </div>
-        )}
+        )} */}
       </div>
     </DashboardLayout>
   );

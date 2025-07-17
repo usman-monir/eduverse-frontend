@@ -176,7 +176,7 @@ const TutorSession = () => {
     setSlotsLoading(true);
     try {
       const response = await fetch(
-        `http://localhost:5050/api/tutors/${user._id}/slots`
+         `${import.meta.env.VITE_API_BASE_URL}/tutors/${user._id}/slots`
       );
       if (response.ok) {
         const slots = await response.json();
@@ -370,7 +370,6 @@ const TutorSession = () => {
               <SessionForm
                 onSubmit={handleAddSession}
                 onCancel={() => setIsAddDialogOpen(false)}
-                isAdmin={user?.role === "admin"}
               />
             </DialogContent>
           </Dialog>
@@ -661,10 +660,8 @@ const TutorSession = () => {
                                     </DialogDescription>
                                   </DialogHeader>
                                   <SessionForm
-                                    session={session}
                                     onSubmit={handleUpdateSession}
                                     onCancel={() => setEditingSession(null)}
-                                    isAdmin={user?.role === "admin"}
                                   />
                                 </DialogContent>
                               </Dialog>

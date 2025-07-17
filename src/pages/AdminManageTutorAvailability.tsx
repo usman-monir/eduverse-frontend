@@ -138,7 +138,7 @@ const AdminManageTutorAvailability = () => {
 
     try {
       const res = await fetch(
-        `http://localhost:5050/api/tutors/${selectedTutor._id}/availability/${day}`,
+         `${import.meta.env.VITE_API_BASE_URL}/tutors/${selectedTutor._id}/availability/${day}`,
         {
           method: "DELETE",
         }

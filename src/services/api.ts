@@ -281,6 +281,9 @@ export const createMeetingLink = async (data: {
   }
 };
 
+export const sendBulkInvitations = async (data: { students: { name: string; email: string; }[], slots: any[] }) => {
+  return api.post('/email/bulk-invite', data);
+};
 
 export default api;
 

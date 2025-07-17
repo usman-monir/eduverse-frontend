@@ -51,19 +51,6 @@ const UserProfile = () => {
     mode: 'onChange',
   });
 
-  const passwordForm = useForm<PasswordForm>({
-    defaultValues: {
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: '',
-    },
-    mode: 'onChange',
-  });
-
-  useEffect(() => {
-    fetchProfile();
-  }, []);
-
   const fetchProfile = async () => {
     try {
       setLoading(true);
@@ -90,6 +77,19 @@ const UserProfile = () => {
       setLoading(false);
     }
   };
+
+  const passwordForm = useForm<PasswordForm>({
+    defaultValues: {
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: '',
+    },
+    mode: 'onChange',
+  });
+
+  useEffect(() => {
+    fetchProfile();
+  }, []);
 
   const onProfileSubmit = async (data: ProfileForm) => {
     setIsUpdatingProfile(true);

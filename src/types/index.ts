@@ -42,7 +42,7 @@ export interface ClassSession {
   id: string;
   subject: string;
   tutor: string;
-  tutorId: string;
+  tutorId?: string;
   tutorName: string;
 
   date: string;

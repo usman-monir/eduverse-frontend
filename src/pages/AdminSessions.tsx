@@ -317,7 +317,6 @@ const AdminSessions = () => {
               <SessionForm
                 onSubmit={handleAddSession}
                 onCancel={() => setIsAddDialogOpen(false)}
-                isAdmin={user?.role === "admin"}
               />
             </DialogContent>
           </Dialog>
@@ -582,10 +581,10 @@ const AdminSessions = () => {
                                     </DialogDescription>
                                   </DialogHeader>
                                   <SessionForm
-                                    session={session}
+                                    // session={session}
                                     onSubmit={handleUpdateSession}
                                     onCancel={() => setEditingSession(null)}
-                                    isAdmin={user?.role === "admin"}
+                                    // isAdmin={user?.role === "admin"}
                                   />
                                 </DialogContent>
                               </Dialog>

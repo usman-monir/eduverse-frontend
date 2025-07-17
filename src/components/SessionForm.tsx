@@ -77,7 +77,7 @@ const SessionForm = ({ onSubmit, onCancel }: SessionFormProps) => {
 
     try {
       const res = await fetch(
-        `http://localhost:5050/api/tutors/${tutorId}/availability`
+        `${import.meta.env.VITE_API_BASE_URL}/tutors/${tutorId}/availability`
       );
       const data = await res.json();
 
@@ -129,7 +129,7 @@ const SessionForm = ({ onSubmit, onCancel }: SessionFormProps) => {
 
     try {
       const res = await fetch(
-        `http://localhost:5050/api/tutors/${id}/availability`
+         `${import.meta.env.VITE_API_BASE_URL}/tutors/${id}/availability`
       );
       const data = await res.json();
 
@@ -235,7 +235,7 @@ const SessionForm = ({ onSubmit, onCancel }: SessionFormProps) => {
       const localDateTimeString = new Date(startTime).toLocaleString();
 
       const meetRes = await axios.post(
-        "http://localhost:5050/api/create-meeting",
+        `${import.meta.env.VITE_API_BASE_URL}/create-meeting`,
         {
           summary: `1-on-1 Session with ${tutorName}`,
           startTime,
@@ -423,199 +423,201 @@ const SessionForm = ({ onSubmit, onCancel }: SessionFormProps) => {
 
   return (
     <div className="space-y-6">
-      {/* Tutor Selection */}
-      <div>
-        <Label>Select Tutor</Label>
-        <Select onValueChange={handleTutorChange} disabled={loadingTutorData}>
-          <SelectTrigger>
-            <SelectValue placeholder="Select tutor" />
-          </SelectTrigger>
-          <SelectContent>
-            {tutors.map((tutor) => (
-              <SelectItem key={tutor._id} value={tutor._id}>
-                <div className="flex items-center gap-2">
-                  <User className="w-4 h-4" />
-                  {tutor.name}
-                </div>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Loading State */}
-      {loadingTutorData && (
-        <div className="flex items-center justify-center p-4">
-          <Loader2 className="w-6 h-6 animate-spin" />
-          <span className="ml-2">Loading tutor availability...</span>
-        </div>
-      )}
-
-      {/* Availability Display */}
-      {availability && !loadingTutorData && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Weekly Availability</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {Object.entries(availability).map(([day, time]) => {
-                if (!time) return null;
-                return (
-                  <div
-                    key={day}
-                    className="flex items-center justify-between p-3 border rounded-lg"
-                  >
-                    <span className="font-medium">
-                      {weekdayLabels[day as Weekday]}
-                    </span>
-                    <Badge variant="outline" className="text-green-600">
-                      {formatTime12Hour(new Date(`2000-01-01T${time.start}`))} -{" "}
-                      {formatTime12Hour(new Date(`2000-01-01T${time.end}`))}
-                    </Badge>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Day Selection */}
-      {availableDays.length > 0 && (
+      {/* Scrollable form content wrapper */}
+      <div className="max-h-[70vh] overflow-y-auto pr-2 space-y-6">
+        {/* Tutor Selection */}
         <div>
-          <Label>Select Day to Generate Sessions</Label>
-          <Select value={selectedDay} onValueChange={handleDayChange}>
+          <Label>Select Tutor</Label>
+          <Select onValueChange={handleTutorChange} disabled={loadingTutorData}>
             <SelectTrigger>
-              <SelectValue placeholder="Select a day" />
+              <SelectValue placeholder="Select tutor" />
             </SelectTrigger>
             <SelectContent>
-              {availableDays.map((day) => (
-                <SelectItem key={day} value={day}>
+              {tutors.map((tutor) => (
+                <SelectItem key={tutor._id} value={tutor._id}>
                   <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4" />
-                    {weekdayLabels[day]}
+                    <User className="w-4 h-4" />
+                    {tutor.name}
                   </div>
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
-      )}
 
-      {selectedDay && selectedDate && (
-        <p className="text-sm text-muted-foreground">
-          Sessions will be created for{" "}
-          <strong>{weekdayLabels[selectedDay]}</strong>, {selectedDate}
-        </p>
-      )}
+        {/* Loading State */}
+        {loadingTutorData && (
+          <div className="flex items-center justify-center p-4">
+            <Loader2 className="w-6 h-6 animate-spin" />
+            <span className="ml-2">Loading tutor availability...</span>
+          </div>
+        )}
 
-      {/* Show created sessions summary */}
-      {createdSessions.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg text-green-600">
-              ✅ Created Sessions ({createdSessions.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              {createdSessions.length} session(s) have been successfully created
-              and saved.
-            </p>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Time Slots */}
-      {timeSlots.length > 0 && (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-lg">
-              Available Time Slots - {weekdayLabels[selectedDay as Weekday]}
-            </CardTitle>
-            <Button
-              onClick={handleCreateAllSessions}
-              disabled={
-                generatingAllLinks || timeSlots.every((slot) => slot.isCreated)
-              }
-              className="ml-auto"
-            >
-              {generatingAllLinks ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Creating All...
-                </>
-              ) : (
-                "Create All Sessions"
-              )}
-            </Button>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {timeSlots.map((slot, index) => (
-                <div
-                  key={index}
-                  className={`p-4 border rounded-lg ${
-                    slot.isCreated
-                      ? "bg-green-50 border-green-200"
-                      : "bg-gray-50 border-gray-200"
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4" />
-                      <span className="font-medium">{slot.time}</span>
-                    </div>
-                    {slot.isCreated && (
-                      <Badge variant="default" className="bg-green-600">
-                        Created
+        {/* Availability Display */}
+        {availability && !loadingTutorData && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Weekly Availability</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {Object.entries(availability).map(([day, time]) => {
+                  if (!time) return null;
+                  return (
+                    <div
+                      key={day}
+                      className="flex items-center justify-between p-3 border rounded-lg"
+                    >
+                      <span className="font-medium">
+                        {weekdayLabels[day as Weekday]}
+                      </span>
+                      <Badge variant="outline" className="text-green-600">
+                        {formatTime12Hour(new Date(`2000-01-01T${time.start}`))} -{" "}
+                        {formatTime12Hour(new Date(`2000-01-01T${time.end}`))}
                       </Badge>
-                    )}
-                  </div>
-
-                  {slot.meetingLink && (
-                    <div className="mb-3">
-                      <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
-                        <LinkIcon className="w-3 h-3" />
-                        Meeting Link:
-                      </div>
-                      <a
-                        href={slot.meetingLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline text-sm break-all"
-                      >
-                        {slot.meetingLink}
-                      </a>
                     </div>
-                  )}
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-                  <Button
-                    onClick={() => handleCreateSession(index)}
-                    disabled={slot.isCreated || slot.isCreating}
-                    className="w-full"
-                    size="sm"
+        {/* Day Selection */}
+        {availableDays.length > 0 && (
+          <div>
+            <Label>Select Day to Generate Sessions</Label>
+            <Select value={selectedDay} onValueChange={handleDayChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a day" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableDays.map((day) => (
+                  <SelectItem key={day} value={day}>
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4" />
+                      {weekdayLabels[day]}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        {selectedDay && selectedDate && (
+          <p className="text-sm text-muted-foreground">
+            Sessions will be created for{" "}
+            <strong>{weekdayLabels[selectedDay]}</strong>, {selectedDate}
+          </p>
+        )}
+
+        {/* Show created sessions summary */}
+        {createdSessions.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg text-green-600">
+                ✅ Created Sessions ({createdSessions.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                {createdSessions.length} session(s) have been successfully created
+                and saved.
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Time Slots */}
+        {timeSlots.length > 0 && (
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-lg">
+                Available Time Slots - {weekdayLabels[selectedDay as Weekday]}
+              </CardTitle>
+              <Button
+                onClick={handleCreateAllSessions}
+                disabled={
+                  generatingAllLinks || timeSlots.every((slot) => slot.isCreated)
+                }
+                className="ml-auto"
+              >
+                {generatingAllLinks ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Creating All...
+                  </>
+                ) : (
+                  "Create All Sessions"
+                )}
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {timeSlots.map((slot, index) => (
+                  <div
+                    key={index}
+                    className={`p-4 border rounded-lg ${
+                      slot.isCreated
+                        ? "bg-green-50 border-green-200"
+                        : "bg-gray-50 border-gray-200"
+                    }`}
                   >
-                    {slot.isCreating ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Creating...
-                      </>
-                    ) : slot.isCreated ? (
-                      "Session Created"
-                    ) : (
-                      "Create Session"
-                    )}
-                  </Button>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4" />
+                        <span className="font-medium">{slot.time}</span>
+                      </div>
+                      {slot.isCreated && (
+                        <Badge variant="default" className="bg-green-600">
+                          Created
+                        </Badge>
+                      )}
+                    </div>
 
-      {/* Form Actions */}
+                    {slot.meetingLink && (
+                      <div className="mb-3">
+                        <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
+                          <LinkIcon className="w-3 h-3" />
+                          Meeting Link:
+                        </div>
+                        <a
+                          href={slot.meetingLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline text-sm break-all"
+                        >
+                          {slot.meetingLink}
+                        </a>
+                      </div>
+                    )}
+
+                    <Button
+                      onClick={() => handleCreateSession(index)}
+                      disabled={slot.isCreated || slot.isCreating}
+                      className="w-full"
+                      size="sm"
+                    >
+                      {slot.isCreating ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Creating...
+                        </>
+                      ) : slot.isCreated ? (
+                        "Session Created"
+                      ) : (
+                        "Create Session"
+                      )}
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+      {/* Form Actions (not scrollable) */}
       <div className="flex justify-end space-x-2">
         <Button variant="outline" type="button" onClick={onCancel}>
           Cancel

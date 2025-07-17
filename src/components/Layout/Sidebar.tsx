@@ -55,7 +55,7 @@ const Sidebar = () => {
   ];
 
   const adminNavItems = [
-    { path: "/admin/dashboard", label: "Dashboard", icon: Home },
+    { path: "/admin-dashboard", label: "Dashboard", icon: Home },
     { path: "/admin/sessions", label: "Sessions", icon: Calendar },
     { path: "/admin/subjects", label: "Subjects", icon: BookOpen },
     { path: "/admin/study-materials", label: "Study Material", icon: BookOpen },
@@ -77,8 +77,8 @@ const Sidebar = () => {
         <p className="text-sm text-gray-500 mt-1">Learning Management</p>
       </div>
 
-      <nav className="mt-6">
-        <div className="space-y-1">
+      <nav className="mt-6 flex-1 overflow-y-auto">
+        <div className="space-y-1 pb-8">
           {getNavItems().map((item) => (
             <Link
               key={item.path}

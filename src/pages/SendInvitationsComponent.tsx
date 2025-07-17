@@ -18,13 +18,16 @@ import {
   AlertCircle,
   Users,
 } from "lucide-react";
-import { getAvailableTutors, getTutorAvailability, getStudents } from "@/services/api";
+import { getAvailableTutors, getTutorAvailability, getStudents, sendBulkInvitations } from "@/services/api";
+import { useAuth } from "@/contexts/AuthContext";
+import DashboardLayout from '@/components/Layout/DashboardLayout';
 const SendInvitationsComponent = () => {
   const [tutors, setTutors] = useState<any[]>([]);
   const [availableSlots, setAvailableSlots] = useState<any[]>([]);
   const [students, setStudents] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [invitationsSent, setInvitationsSent] = useState(false);
+  const {user} = useAuth();
 
   // Fetch students (replace with real API if needed)
 useEffect(() => {
@@ -69,7 +72,7 @@ useEffect(() => {
         const response = await getAvailableTutors();
         const tutorList = response.data?.data || [];
         setTutors(tutorList);
-        await extractAvailableSlots(tutorList);
+        await extractAvailableSlots(tutorList, user.id);
       } catch (error) {
         console.error("Error fetching tutors:", error);
       }
@@ -201,12 +204,10 @@ useEffect(() => {
   const sendInvitations = async () => {
     setLoading(true);
     try {
-      await new Promise((res) => setTimeout(res, 1500)); // mock delay
-      console.log(
-        "Sending to:",
-        students.map((s) => s.email)
-      );
-      console.log("Slots:", availableSlots);
+      await sendBulkInvitations({
+        students: students.map((s) => ({ name: s.name, email: s.email })),
+        slots: availableSlots,
+      });
       setInvitationsSent(true);
     } catch (e) {
       console.error("Sending failed:", e);
@@ -216,6 +217,7 @@ useEffect(() => {
   };
 
   return (
+    <DashboardLayout>
     <div className="space-y-6">
       <Card>
         <CardHeader>
@@ -421,6 +423,7 @@ useEffect(() => {
         </CardContent>
       </Card>
     </div>
+    </DashboardLayout>
   );
 };
 
