@@ -1,11 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { toast } from '@/hooks/use-toast';
-import DashboardLayout from '@/components/Layout/DashboardLayout';
-import { Calendar, Clock, User, Video, CheckCircle, XCircle, Loader2 } from 'lucide-react';
-import { getMySessions } from '@/services/api';
+import React, { useState, useEffect } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "@/hooks/use-toast";
+import DashboardLayout from "@/components/Layout/DashboardLayout";
+import {
+  Calendar,
+  Clock,
+  User,
+  Video,
+  CheckCircle,
+  XCircle,
+  Loader2,
+} from "lucide-react";
+import { getMySessions } from "@/services/api";
 
 interface Session {
   _id: string;
@@ -19,7 +33,7 @@ interface Session {
   date: string;
   time: string;
   duration: string;
-  status: 'available' | 'booked' | 'completed' | 'cancelled';
+  status: "available" | "booked" | "completed" | "cancelled";
   studentId?: {
     _id: string;
     name: string;
@@ -36,7 +50,9 @@ interface Session {
 const StudentSessions = () => {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'upcoming' | 'completed' | 'cancelled'>('upcoming');
+  const [activeTab, setActiveTab] = useState<
+    "upcoming" | "completed" | "cancelled"
+  >("upcoming");
 
   useEffect(() => {
     fetchSessions();
@@ -47,38 +63,48 @@ const StudentSessions = () => {
       setLoading(true);
       const response = await getMySessions();
       setSessions(response.data.data || []);
+      console.log("Fetched sessions:", response.data.data);
     } catch (error: any) {
-      console.error('Error fetching sessions:', error);
+      console.error("Error fetching sessions:", error);
       toast({
-        title: 'Error',
-        description: error.response?.data?.message || 'Failed to fetch sessions',
-        variant: 'destructive',
+        title: "Error",
+        description:
+          error.response?.data?.message || "Failed to fetch sessions",
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  };
 
-  const formatTime = (timeString: string) => {
-    return timeString;
-  };
+const formatTime = (time: string) => {
+  const [hour, minute] = time.split(":").map(Number);
+  const date = new Date();
+  date.setHours(hour);
+  date.setMinutes(minute);
+  return date.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+};
+const formatDate = (dateStr: string) => {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString("en-US", {
+    month: "short", // "Dec"
+    day: "2-digit", // "12"
+    year: "numeric", // "2025"
+  });
+};
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'booked':
+      case "booked":
         return <Badge className="bg-blue-100 text-blue-800">Upcoming</Badge>;
-      case 'completed':
+      case "completed":
         return <Badge className="bg-green-100 text-green-800">Completed</Badge>;
-      case 'cancelled':
+      case "cancelled":
         return <Badge className="bg-red-100 text-red-800">Cancelled</Badge>;
       default:
         return null;
@@ -87,21 +113,26 @@ const StudentSessions = () => {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'booked':
+      case "booked":
         return <Calendar className="h-5 w-5 text-blue-600" />;
-      case 'completed':
+      case "completed":
         return <CheckCircle className="h-5 w-5 text-green-600" />;
-      case 'cancelled':
+      case "cancelled":
         return <XCircle className="h-5 w-5 text-red-600" />;
       default:
         return <Calendar className="h-5 w-5 text-gray-600" />;
     }
   };
 
-  const filteredSessions = sessions.filter(session => {
-    if (activeTab === 'upcoming') return session.status === 'booked';
-    if (activeTab === 'completed') return session.status === 'completed';
-    if (activeTab === 'cancelled') return session.status === 'cancelled';
+  const filteredSessions = sessions.filter((session) => {
+    if (activeTab === "upcoming") {
+      return (
+        (session.status === "booked" || session.status === "approved") &&
+        (session.type === "admin_created" || session.type === "slot_request")
+      );
+    }
+    if (activeTab === "completed") return session.status === "completed";
+    if (activeTab === "cancelled") return session.status === "cancelled";
     return false;
   });
 
@@ -129,7 +160,9 @@ const StudentSessions = () => {
           </div>
           <div className="flex items-center space-x-2 text-sm text-gray-600">
             <Clock className="h-4 w-4" />
-            <span>{formatTime(session.time)} ({session.duration})</span>
+            <span>
+              {formatTime(session.time)} ({session.duration})
+            </span>
           </div>
           {session.meetingLink && (
             <div className="flex items-center space-x-2 text-sm text-gray-600">
@@ -143,10 +176,13 @@ const StudentSessions = () => {
             </p>
           )}
         </div>
-        
-        {session.status === 'booked' && session.meetingLink && (
+
+       {(session.status === "booked" || session.status === "approved") && session.meetingLink && (
           <div className="mt-4">
-            <Button className="w-full" onClick={() => window.open(session.meetingLink, '_blank')}>
+            <Button
+              className="w-full"
+              onClick={() => window.open(session.meetingLink, "_blank")}
+            >
               <Video className="h-4 w-4 mr-2" />
               Join Class
             </Button>
@@ -173,7 +209,9 @@ const StudentSessions = () => {
         {/* Header */}
         <div>
           <h1 className="text-3xl font-bold mb-2">My Sessions</h1>
-          <p className="text-gray-600">View and manage your learning sessions</p>
+          <p className="text-gray-600">
+            View and manage your learning sessions
+          </p>
         </div>
 
         {/* Stats */}
@@ -185,7 +223,7 @@ const StudentSessions = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-blue-600">
-                {sessions.filter(s => s.status === 'booked').length}
+                {sessions.filter((s) => s.status === "booked").length}
               </div>
               <p className="text-xs text-muted-foreground">Next classes</p>
             </CardContent>
@@ -198,7 +236,7 @@ const StudentSessions = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-600">
-                {sessions.filter(s => s.status === 'completed').length}
+                {sessions.filter((s) => s.status === "completed").length}
               </div>
               <p className="text-xs text-muted-foreground">Finished classes</p>
             </CardContent>
@@ -210,9 +248,7 @@ const StudentSessions = () => {
               <User className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {sessions.length}
-              </div>
+              <div className="text-2xl font-bold">{sessions.length}</div>
               <p className="text-xs text-muted-foreground">All sessions</p>
             </CardContent>
           </Card>
@@ -221,59 +257,67 @@ const StudentSessions = () => {
         {/* Tabs */}
         <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
           <Button
-            variant={activeTab === 'upcoming' ? 'default' : 'ghost'}
+            variant={activeTab === "upcoming" ? "default" : "ghost"}
             size="sm"
-            onClick={() => setActiveTab('upcoming')}
+            onClick={() => setActiveTab("upcoming")}
             className="flex-1"
           >
-            Upcoming ({sessions.filter(s => s.status === 'booked').length})
+            Upcoming ({sessions.filter((s) => s.status === "booked").length})
           </Button>
           <Button
-            variant={activeTab === 'completed' ? 'default' : 'ghost'}
+            variant={activeTab === "completed" ? "default" : "ghost"}
             size="sm"
-            onClick={() => setActiveTab('completed')}
+            onClick={() => setActiveTab("completed")}
             className="flex-1"
           >
-            Completed ({sessions.filter(s => s.status === 'completed').length})
+            Completed ({sessions.filter((s) => s.status === "completed").length}
+            )
           </Button>
           <Button
-            variant={activeTab === 'cancelled' ? 'default' : 'ghost'}
+            variant={activeTab === "cancelled" ? "default" : "ghost"}
             size="sm"
-            onClick={() => setActiveTab('cancelled')}
+            onClick={() => setActiveTab("cancelled")}
             className="flex-1"
           >
-            Cancelled ({sessions.filter(s => s.status === 'cancelled').length})
+            Cancelled ({sessions.filter((s) => s.status === "cancelled").length}
+            )
           </Button>
         </div>
 
         {/* Sessions List */}
         <div className="space-y-4">
           {filteredSessions.length > 0 ? (
-            filteredSessions.map(session => (
+            filteredSessions.map((session) => (
               <SessionCard key={session._id} session={session} />
             ))
           ) : (
             <Card>
               <CardContent className="text-center py-12">
                 <div className="text-gray-500">
-                  {activeTab === 'upcoming' && (
+                  {activeTab === "upcoming" && (
                     <>
                       <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                      <h3 className="text-lg font-medium mb-2">No upcoming sessions</h3>
+                      <h3 className="text-lg font-medium mb-2">
+                        No upcoming sessions
+                      </h3>
                       <p>You don't have any upcoming classes scheduled.</p>
                     </>
                   )}
-                  {activeTab === 'completed' && (
+                  {activeTab === "completed" && (
                     <>
                       <CheckCircle className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                      <h3 className="text-lg font-medium mb-2">No completed sessions</h3>
+                      <h3 className="text-lg font-medium mb-2">
+                        No completed sessions
+                      </h3>
                       <p>You haven't completed any classes yet.</p>
                     </>
                   )}
-                  {activeTab === 'cancelled' && (
+                  {activeTab === "cancelled" && (
                     <>
                       <XCircle className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                      <h3 className="text-lg font-medium mb-2">No cancelled sessions</h3>
+                      <h3 className="text-lg font-medium mb-2">
+                        No cancelled sessions
+                      </h3>
                       <p>You don't have any cancelled classes.</p>
                     </>
                   )}
@@ -287,4 +331,4 @@ const StudentSessions = () => {
   );
 };
 
-export default StudentSessions; 
+export default StudentSessions;
