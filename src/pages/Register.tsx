@@ -10,7 +10,7 @@ const Register = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-100 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl w-full space-y-8">
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-purple-600 mb-2">EduPortal</h1>
+          <h1 className="text-4xl font-bold text-purple-600 mb-2">Score Smart LMS</h1>
           <p className="text-gray-600 text-lg">Choose how you want to join our learning community</p>
         </div>
 

@@ -149,7 +149,7 @@ const RegisterTutor = () => {
               <BookOpen className='h-8 w-8 text-white' />
             </div>
           </div>
-          <h1 className='text-4xl font-bold text-green-600 mb-2'>EduPortal</h1>
+          <h1 className='text-4xl font-bold text-green-600 mb-2'>Score Smart LMS</h1>
           <p className='text-gray-600'>Join as a Tutor</p>
         </div>
 

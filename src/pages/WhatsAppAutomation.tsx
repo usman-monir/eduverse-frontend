@@ -440,7 +440,7 @@ const WhatsAppAutomation = () => {
                       <div className='w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm'>
                         W
                       </div>
-                      <span className='font-medium text-sm'>EduPortal Bot</span>
+                      <span className='font-medium text-sm'>Score Smart LMS Bot</span>
                     </div>
                     <p className='text-sm'>
                       {renderPreview(newTemplate.template, sessionVariables)}
@@ -598,7 +598,7 @@ const WhatsAppAutomation = () => {
                             W
                           </div>
                           <span className='font-medium text-sm'>
-                            EduPortal Bot
+                            Score-Smart-LMS Bot
                           </span>
                         </div>
                         <p className='text-sm'>
@@ -780,7 +780,7 @@ const WhatsAppAutomation = () => {
                             W
                           </div>
                           <span className='font-medium text-sm'>
-                            EduPortal Bot
+                            Score-Smart-LMS Bot
                           </span>
                         </div>
                         <p className='text-sm'>
