@@ -1,0 +1,647 @@
+import React, { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Loader2, Clock, Calendar, User, Link as LinkIcon } from "lucide-react";
+import axios from "axios";
+import { getAvailableTutors, createSession } from "@/services/api";
+import { ClassSession } from "@/types";
+
+type Weekday =
+  | "monday"
+  | "tuesday"
+  | "wednesday"
+  | "thursday"
+  | "friday"
+  | "saturday"
+  | "sunday";
+
+const weekdayLabels: Record<Weekday, string> = {
+  monday: "Monday",
+  tuesday: "Tuesday",
+  wednesday: "Wednesday",
+  thursday: "Thursday",
+  friday: "Friday",
+  saturday: "Saturday",
+  sunday: "Sunday",
+};
+
+interface TimeSlot {
+  time: string;
+  sessionData: Omit<ClassSession, "id" | "createdAt" | "updatedAt"> & {
+    rawTime: string;
+  };
+  meetingLink?: string;
+  isCreated: boolean;
+  isCreating: boolean;
+}
+
+interface SessionFormProps {
+  onSubmit: (
+    sessionData: Omit<ClassSession, "id" | "createdAt" | "updatedAt">
+  ) => void;
+  onCancel: () => void;
+  session?: ClassSession;
+}
+
+const SessionForm = ({ onSubmit, onCancel, session }: SessionFormProps) => {
+  const [tutors, setTutors] = useState<any[]>([]);
+  const [tutorId, setTutorId] = useState(session?.tutorId || session?.tutor || "");
+  const [tutorName, setTutorName] = useState(session?.tutorName || "");
+  const [availability, setAvailability] = useState<Record<
+    Weekday,
+    { start: string; end: string }
+  > | null>(null);
+  const [availableDays, setAvailableDays] = useState<Weekday[]>([]);
+  const [existingSessions, setExistingSessions] = useState<
+    { date: string; time: string }[]
+  >([]);
+
+  const [selectedDay, setSelectedDay] = useState<Weekday | "">(session ? (session.date ? (new Date(session.date).toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase() as Weekday) : "") : "");
+  const [selectedDate, setSelectedDate] = useState(session?.date || "");
+  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
+  const [loadingTutorData, setLoadingTutorData] = useState(false);
+  const [generatingAllLinks, setGeneratingAllLinks] = useState(false);
+  const [createdSessions, setCreatedSessions] = useState<any[]>([]); // Track created sessions
+
+  // Prefill logic for edit mode
+  useEffect(() => {
+    if (session) {
+      setTutorId(session.tutorId || session.tutor || "");
+      setTutorName(session.tutorName || "");
+      setSelectedDate(session.date || "");
+      setSelectedDay(session.date ? (new Date(session.date).toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase() as Weekday) : "");
+    }
+  }, [session]);
+
+  const refreshExistingSessions = async () => {
+    if (!tutorId) return;
+
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/tutors/${tutorId}/availability`
+      );
+      const data = await res.json();
+
+      if (data?.existingSessions) {
+        const mapped = data.existingSessions.map((s: any) => ({
+          date: new Date(s.date).toISOString().split("T")[0],
+          time: s.time,
+        }));
+        setExistingSessions(mapped);
+      }
+    } catch (error) {
+      console.error("Error refreshing existing sessions:", error);
+    }
+  };
+
+  // Fetch tutors on component mount
+  useEffect(() => {
+    const fetchTutors = async () => {
+      try {
+        const response = await getAvailableTutors();
+        setTutors(response.data.data || []);
+      } catch (error) {
+        console.error("Error fetching tutors:", error);
+      }
+    };
+    fetchTutors();
+  }, []);
+
+  // Generate time slots when day and date are selected
+  useEffect(() => {
+    if (selectedDay && selectedDate && availability) {
+      generateTimeSlots();
+    }
+  }, [selectedDay, selectedDate, availability, existingSessions]); // Added existingSessions dependency
+
+  const handleTutorChange = async (id: string) => {
+    const tutor = tutors.find((t) => t._id === id);
+    if (!tutor) return;
+
+    setLoadingTutorData(true);
+    setTutorId(id);
+    setTutorName(tutor.name);
+    setSelectedDay("");
+    setSelectedDate("");
+    setTimeSlots([]);
+    setAvailability(null);
+    setAvailableDays([]);
+    setCreatedSessions([]); // Reset created sessions
+
+    try {
+      const res = await fetch(
+         `${import.meta.env.VITE_API_BASE_URL}/tutors/${id}/availability`
+      );
+      const data = await res.json();
+
+      if (data?.availability) {
+        setAvailability(data.availability);
+
+        const days = Object.keys(data.availability).filter(
+          (day) => data.availability[day]?.start && data.availability[day]?.end
+        ) as Weekday[];
+
+        setAvailableDays(days);
+      }
+
+      if (data?.existingSessions) {
+        const mappedSessions = data.existingSessions.map((session: any) => ({
+          date: new Date(session.date).toISOString().split("T")[0],
+          time: session.time,
+        }));
+        setExistingSessions(mappedSessions);
+      }
+    } catch (err) {
+      console.error("Error fetching tutor data:", err);
+    } finally {
+      setLoadingTutorData(false);
+    }
+  };
+
+  const generateTimeSlots = () => {
+    if (!selectedDay || !selectedDate || !availability) return;
+
+    const dayAvailability = availability[selectedDay];
+    if (!dayAvailability) return;
+
+    const startHour = parseInt(dayAvailability.start.split(":")[0]);
+    const endHour = parseInt(dayAvailability.end.split(":")[0]);
+    const slots: TimeSlot[] = [];
+
+    const normalizedSelectedDate = new Date(selectedDate)
+      .toISOString()
+      .split("T")[0];
+
+    for (let hour = startHour; hour < endHour; hour++) {
+      const time24 = `${hour.toString().padStart(2, "0")}:00`;
+
+      const sessionExists = existingSessions.some((s) => {
+        const sessionDate = new Date(s.date).toISOString().split("T")[0];
+        return sessionDate === normalizedSelectedDate && s.time === time24;
+      });
+
+      if (sessionExists) {
+        console.log(
+          `⛔ Skipping slot ${time24} on ${normalizedSelectedDate} — already exists`
+        );
+        continue;
+      }
+
+      const dateForFormat = new Date(`${normalizedSelectedDate}T${time24}`);
+      const time12 = formatTime12Hour(dateForFormat);
+
+      const sessionData: Omit<ClassSession, "id" | "createdAt" | "updatedAt"> =
+        {
+          subject: "1-on-1 Session",
+          tutor: tutorId,
+          tutorName,
+          date: normalizedSelectedDate,
+          time: time24,
+          duration: "60 minutes",
+          status: "available",
+          studentId: "",
+          meetingLink: "",
+          description: "",
+          type: "admin_created",
+          createdBy: "admin",
+          students: [],
+        };
+
+      slots.push({
+        time: time12,
+        sessionData: {
+          ...sessionData,
+          rawTime: time24,
+        },
+        isCreated: false,
+        isCreating: false,
+      });
+    }
+
+    console.log(
+      `✅ Generated ${slots.length} time slots for ${normalizedSelectedDate}`
+    );
+    setTimeSlots(slots);
+  };
+
+  const createMeetingLink = async (startTime: string, endTime: string) => {
+    try {
+      const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+      const selectedDate = startTime.split("T")[0];
+      const selectedTime = new Date(startTime).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      const localDateTimeString = new Date(startTime).toLocaleString();
+
+      const meetRes = await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL}/create-meeting`,
+        {
+          summary: `1-on-1 Session with ${tutorName}`,
+          startTime,
+          endTime,
+          timeZone,
+          selectedDate,
+          selectedTime,
+          localDateTimeString,
+        }
+      );
+
+      return meetRes.data.meetLink;
+    } catch (error) {
+      console.error("Error creating meeting:", error);
+      return null;
+    }
+  };
+
+  const handleCreateSession = async (index: number) => {
+    const slot = timeSlots[index];
+    if (slot.isCreated || slot.isCreating) return;
+
+    const updatedSlots = [...timeSlots];
+    updatedSlots[index].isCreating = true;
+    setTimeSlots(updatedSlots);
+
+    try {
+      const sessionStart = new Date(
+        `${selectedDate}T${slot.sessionData.rawTime}`
+      );
+      const sessionEnd = new Date(sessionStart.getTime() + 60 * 60 * 1000);
+
+      const meetingLink = await createMeetingLink(
+        sessionStart.toISOString(),
+        sessionEnd.toISOString()
+      );
+
+      if (!meetingLink) {
+        throw new Error("Failed to create meeting link");
+      }
+
+      const sessionData = {
+        ...slot.sessionData,
+        meetingLink,
+        tutorId,
+      };
+
+      await createSession(sessionData);
+
+      // ✅ Add to created sessions array instead of calling onSubmit immediately
+      setCreatedSessions((prev) => [...prev, sessionData]);
+
+      // ✅ Update the specific slot to show it's created
+      updatedSlots[index] = {
+        ...slot,
+        meetingLink,
+        isCreated: true,
+        isCreating: false,
+        sessionData,
+      };
+      setTimeSlots(updatedSlots);
+
+      // ✅ Refresh existing sessions to get updated data
+      await refreshExistingSessions();
+    } catch (error) {
+      console.error("Error creating session:", error);
+      updatedSlots[index].isCreating = false;
+      setTimeSlots(updatedSlots);
+    }
+  };
+
+  const handleCreateAllSessions = async () => {
+    setGeneratingAllLinks(true);
+    const newlyCreatedSessions: any[] = [];
+
+    try {
+      // Create sessions sequentially to avoid race conditions
+      for (let index = 0; index < timeSlots.length; index++) {
+        const slot = timeSlots[index];
+        if (slot.isCreated) continue;
+
+        const updatedSlots = [...timeSlots];
+        updatedSlots[index].isCreating = true;
+        setTimeSlots(updatedSlots);
+
+        try {
+          const rawTime = slot.sessionData.rawTime;
+          const sessionStart = new Date(`${selectedDate}T${rawTime}`);
+          const sessionEnd = new Date(sessionStart.getTime() + 60 * 60 * 1000);
+
+          const meetingLink = await createMeetingLink(
+            sessionStart.toISOString(),
+            sessionEnd.toISOString()
+          );
+
+          if (!meetingLink) {
+            throw new Error("Failed to create meeting link");
+          }
+
+          const sessionData = {
+            ...slot.sessionData,
+            meetingLink,
+            tutorId,
+          };
+
+          await createSession(sessionData);
+          newlyCreatedSessions.push(sessionData);
+
+          updatedSlots[index] = {
+            ...slot,
+            meetingLink,
+            isCreated: true,
+            isCreating: false,
+            sessionData,
+          };
+
+          setTimeSlots(updatedSlots);
+        } catch (error) {
+          console.error(`Error creating session for ${slot.time}:`, error);
+          updatedSlots[index].isCreating = false;
+          setTimeSlots(updatedSlots);
+        }
+      }
+
+      // ✅ Add all newly created sessions to the array
+      setCreatedSessions((prev) => [...prev, ...newlyCreatedSessions]);
+
+      // ✅ Refresh existing sessions after all are created
+      await refreshExistingSessions();
+    } finally {
+      setGeneratingAllLinks(false);
+    }
+  };
+
+  // ✅ New function to handle final submission
+  // ✅ Updated function to handle final submission without API call
+  const handleFinalSubmit = () => {
+    if (createdSessions.length > 0) {
+      // Just close the form/modal without making another API call
+      // The sessions are already created, so we just need to close
+      onCancel(); // or you can call a separate onClose prop if available
+    }
+  };
+
+  const getNextAvailableDate = (dayName: string) => {
+    const today = new Date();
+    const dayIndex = [
+      "sunday",
+      "monday",
+      "tuesday",
+      "wednesday",
+      "thursday",
+      "friday",
+      "saturday",
+    ].indexOf(dayName.toLowerCase());
+
+    const todayIndex = today.getDay();
+    let daysUntilTarget = (dayIndex - todayIndex + 7) % 7;
+
+    if (daysUntilTarget === 0) {
+      daysUntilTarget = 7;
+    }
+
+    const targetDate = new Date(today);
+    targetDate.setDate(today.getDate() + daysUntilTarget);
+
+    return targetDate.toISOString().split("T")[0];
+  };
+
+  const formatTime12Hour = (date: Date) => {
+    return date.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
+
+  const handleDayChange = (day: Weekday) => {
+    const nextDate = getNextAvailableDate(day);
+    setSelectedDay(day);
+    setSelectedDate(nextDate);
+    setTimeSlots([]);
+    setCreatedSessions([]); // Reset created sessions when changing day
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Scrollable form content wrapper */}
+      <div className="max-h-[70vh] overflow-y-auto pr-2 space-y-6">
+        {/* Tutor Selection */}
+        <div>
+          <Label>Select Tutor</Label>
+          <Select onValueChange={handleTutorChange} disabled={loadingTutorData}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select tutor" />
+            </SelectTrigger>
+            <SelectContent>
+              {tutors.map((tutor) => (
+                <SelectItem key={tutor._id} value={tutor._id}>
+                  <div className="flex items-center gap-2">
+                    <User className="w-4 h-4" />
+                    {tutor.name}
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Loading State */}
+        {loadingTutorData && (
+          <div className="flex items-center justify-center p-4">
+            <Loader2 className="w-6 h-6 animate-spin" />
+            <span className="ml-2">Loading tutor availability...</span>
+          </div>
+        )}
+
+        {/* Availability Display */}
+        {availability && !loadingTutorData && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Weekly Availability</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {Object.entries(availability).map(([day, time]) => {
+                  if (!time) return null;
+                  return (
+                    <div
+                      key={day}
+                      className="flex items-center justify-between p-3 border rounded-lg"
+                    >
+                      <span className="font-medium">
+                        {weekdayLabels[day as Weekday]}
+                      </span>
+                      <Badge variant="outline" className="text-green-600">
+                        {formatTime12Hour(new Date(`2000-01-01T${time.start}`))} -{" "}
+                        {formatTime12Hour(new Date(`2000-01-01T${time.end}`))}
+                      </Badge>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Day Selection */}
+        {availableDays.length > 0 && (
+          <div>
+            <Label>Select Day to Generate Sessions</Label>
+            <Select value={selectedDay} onValueChange={handleDayChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a day" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableDays.map((day) => (
+                  <SelectItem key={day} value={day}>
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4" />
+                      {weekdayLabels[day]}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        {selectedDay && selectedDate && (
+          <p className="text-sm text-muted-foreground">
+            Sessions will be created for{" "}
+            <strong>{weekdayLabels[selectedDay]}</strong>, {selectedDate}
+          </p>
+        )}
+
+        {/* Show created sessions summary */}
+        {createdSessions.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg text-green-600">
+                ✅ Created Sessions ({createdSessions.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                {createdSessions.length} session(s) have been successfully created
+                and saved.
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Time Slots */}
+        {timeSlots.length > 0 && (
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-lg">
+                Available Time Slots - {weekdayLabels[selectedDay as Weekday]}
+              </CardTitle>
+              <Button
+                onClick={handleCreateAllSessions}
+                disabled={
+                  generatingAllLinks || timeSlots.every((slot) => slot.isCreated)
+                }
+                className="ml-auto"
+              >
+                {generatingAllLinks ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Creating All...
+                  </>
+                ) : (
+                  "Create All Sessions"
+                )}
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {timeSlots.map((slot, index) => (
+                  <div
+                    key={index}
+                    className={`p-4 border rounded-lg ${
+                      slot.isCreated
+                        ? "bg-green-50 border-green-200"
+                        : "bg-gray-50 border-gray-200"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4" />
+                        <span className="font-medium">{slot.time}</span>
+                      </div>
+                      {slot.isCreated && (
+                        <Badge variant="default" className="bg-green-600">
+                          Created
+                        </Badge>
+                      )}
+                    </div>
+
+                    {slot.meetingLink && (
+                      <div className="mb-3">
+                        <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
+                          <LinkIcon className="w-3 h-3" />
+                          Meeting Link:
+                        </div>
+                        <a
+                          href={slot.meetingLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline text-sm break-all"
+                        >
+                          {slot.meetingLink}
+                        </a>
+                      </div>
+                    )}
+
+                    <Button
+                      onClick={() => handleCreateSession(index)}
+                      disabled={slot.isCreated || slot.isCreating}
+                      className="w-full"
+                      size="sm"
+                    >
+                      {slot.isCreating ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Creating...
+                        </>
+                      ) : slot.isCreated ? (
+                        "Session Created"
+                      ) : (
+                        "Create Session"
+                      )}
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+      {/* Form Actions (not scrollable) */}
+      <div className="flex justify-end space-x-2">
+        <Button variant="outline" type="button" onClick={onCancel}>
+          Cancel
+        </Button>
+        {/* ✅ Only show Done button if sessions were created */}
+        {createdSessions.length > 0 && (
+          <Button type="button" onClick={handleFinalSubmit}>
+            Done ({createdSessions.length} sessions created)
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default SessionForm;
