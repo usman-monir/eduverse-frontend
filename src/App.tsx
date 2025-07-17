@@ -27,6 +27,7 @@ import NotFound from './pages/NotFound';
 import AdminUserProfile from './pages/AdminUserProfile';
 import UserProfile from './pages/UserProfile';
 import TutorSession from './pages/TutorSession';
+import SendInvitationsComponent from './pages/SendInvitationsComponent';
 
 const queryClient = new QueryClient();
 
@@ -200,6 +201,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute requireRole='admin'>
             <AdminUsers />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path='/send-invite'
+        element={
+          <ProtectedRoute requireRole='admin'>
+            <SendInvitationsComponent/>  
           </ProtectedRoute>
         }
       />

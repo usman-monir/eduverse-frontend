@@ -75,6 +75,12 @@ export const getStudyMaterialById = async (id: string) => {
   return api.get(`/study-materials/${id}`);
 };
 
+export const getStudents = async () => {
+  return api.get('/admin/users', {
+    params: { role: 'student', limit: 100 },
+  });
+};
+
 export const uploadStudyMaterial = async (formData: FormData) => {
   return api.post('/study-materials', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
