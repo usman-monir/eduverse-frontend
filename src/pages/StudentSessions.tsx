@@ -26,7 +26,7 @@ const StudentSessions = () => {
   const [sessions, setSessions] = useState<ClassSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<
-    "upcoming" | "completed" | "cancelled"
+    "upcoming" | "completed" | "cancelled" | "past"
   >("upcoming");
 
   useEffect(() => {
@@ -106,14 +106,20 @@ const StudentSessions = () => {
   };
 
   const filteredSessions = sessions.filter((session) => {
+    const now = new Date();
+    const datePart = session.date.slice(0, 10); // "2025-07-18"
+    const sessionDateTime = new Date(`${datePart}T${session.time}`);
+    // This gives you the correct local datetime for comparison
     if (activeTab === "upcoming") {
       return (
         (session.status === "booked" || session.status === "approved") &&
-        (session.type === "admin_created" || session.type === "slot_request")
+        (session.type === "admin_created" || session.type === "slot_request") &&
+        sessionDateTime > now
       );
     }
     if (activeTab === "completed") return session.status === "completed";
     if (activeTab === "cancelled") return session.status === "cancelled";
+    if (activeTab === "past") return sessionDateTime < now;
     return false;
   });
 
@@ -264,14 +270,24 @@ const StudentSessions = () => {
             Cancelled ({sessions.filter((s) => s.status === "cancelled").length}
             )
           </Button>
+          <Button
+            variant={activeTab === "past" ? "default" : "ghost"}
+            size="sm"
+            onClick={() => setActiveTab("past")}
+            className="flex-1"
+          >
+            Past 
+          </Button>
         </div>
 
         {/* Sessions List */}
         <div className="space-y-4">
           {filteredSessions.length > 0 ? (
-            filteredSessions.map((session) => (
-              <SessionCard key={session.id} session={session} />
-            ))
+            activeTab === "past"
+              ? filteredSessions
+                  .sort((a, b) => new Date(`${b.date}T${b.time}`).getTime() - new Date(`${a.date}T${a.time}`).getTime())
+                  .map((session) => <SessionCard key={session.id} session={session} />)
+              : filteredSessions.map((session) => <SessionCard key={session.id} session={session} />)
           ) : (
             <Card>
               <CardContent className="text-center py-12">
@@ -301,6 +317,15 @@ const StudentSessions = () => {
                         No cancelled sessions
                       </h3>
                       <p>You don't have any cancelled classes.</p>
+                    </>
+                  )}
+                  {activeTab === "past" && (
+                    <>
+                      <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                      <h3 className="text-lg font-medium mb-2">
+                        No past sessions
+                      </h3>
+                      <p>You don't have any past sessions.</p>
                     </>
                   )}
                 </div>

@@ -88,6 +88,7 @@ const TutorSession = () => {
   const [selectedSessions, setSelectedSessions] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState("all");
   const { toast } = useToast();
+  const [filterDate, setFilterDate] = useState("");
 
   // Filter sessions based on user role and current tab
   const getFilteredSessions = () => {
@@ -125,6 +126,11 @@ const TutorSession = () => {
     }
     if (filterType !== "all") {
       filtered = filtered.filter((session) => session.type === filterType);
+    }
+
+    // Date filtering
+    if (filterDate) {
+      filtered = filtered.filter((session) => session.date === filterDate);
     }
 
     // Search filtering
@@ -374,7 +380,26 @@ const TutorSession = () => {
             </DialogContent>
           </Dialog>
         </div>
-
+        {/* Date Filter */}
+        <div className="flex items-center gap-4">
+          <label className="font-medium">Filter by Date:</label>
+          <input
+            type="date"
+            value={filterDate}
+            onChange={(e) => setFilterDate(e.target.value)}
+            className="border-2 border-green-400 rounded px-3 py-1 focus:outline-none focus:ring-2 focus:ring-green-300 bg-green-50 text-green-900 font-semibold shadow-sm transition-all"
+          />
+          {filterDate && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-green-400 text-green-700 hover:bg-green-100"
+              onClick={() => setFilterDate("")}
+            >
+              Clear Date
+            </Button>
+          )}
+        </div>
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>

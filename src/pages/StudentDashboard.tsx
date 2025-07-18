@@ -33,18 +33,27 @@ const StudentDashboard = () => {
   const [error, setError] = React.useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("overview");
 
-  const nextClass = sessions.find((session) => {
+  const now = new Date();
+  const upcomingSessions = sessions.filter((session) => {
     const sessionStudentId =
       session.studentId?.toString?.() ||
       session.students?.[0]?.studentId?.toString?.();
 
     const userId = user?._id?.toString?.() || user?.id?.toString?.();
 
+    const now = new Date();
+    const datePart = session.date.slice(0, 10); // "2025-07-18"
+    const sessionDateTime = new Date(`${datePart}T${session.time}`);
     return (
       (session.status === "booked" || session.status === "approved") &&
-      sessionStudentId === userId
+      sessionStudentId === userId ||
+      sessionDateTime > now
     );
   });
+
+  const nextClass = upcomingSessions.sort(
+    (a, b) => new Date(`${a.date}T${a.time}`).getTime() - new Date(`${b.date}T${b.time}`).getTime()
+  )[0];
   const formatTime = (time: string) => {
     const [hour, minute] = time.split(":").map(Number);
     const date = new Date();
