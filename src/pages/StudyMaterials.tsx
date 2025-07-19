@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { FileText, Download, Eye, Shield, Loader2 } from 'lucide-react';
+import { FileText, Download, Eye, Shield, Loader2, Folder, FolderOpen, Upload, ArrowLeft, File } from 'lucide-react';
 import DashboardLayout from '@/components/Layout/DashboardLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { getStudyMaterials, getStudyMaterialCollections, uploadStudyMaterial, deleteStudyMaterial } from '@/services/api';
@@ -34,20 +34,119 @@ import { useRef } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.js';
 
-function StudyMaterialUploadDialog({ open, onClose, onUploaded, collections }: { open: boolean; onClose: () => void; onUploaded: () => void; collections: string[] }) {
-  const [title, setTitle] = React.useState('');
-  const [description, setDescription] = React.useState('');
-  const [subject, setSubject] = React.useState('');
-  const [file, setFile] = React.useState<File | null>(null);
-  const [collection, setCollection] = React.useState('');
-  const [newCollection, setNewCollection] = React.useState('');
+function CreateCollectionDialog({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: () => void }) {
+  const [collectionName, setCollectionName] = React.useState('');
+  const [collectionDescription, setCollectionDescription] = React.useState('');
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (!title || !file || !(collection || newCollection)) {
+    if (!collectionName.trim()) {
+      setError('Please enter a collection name.');
+      return;
+    }
+    setLoading(true);
+    try {
+      // Create a collection info file
+      const formData = new FormData();
+      formData.append('title', `${collectionName.trim()} - Collection Info`);
+      formData.append('description', collectionDescription.trim() || `This collection contains study materials for ${collectionName.trim()}. Upload your files here to organize your learning resources.`);
+      formData.append('subject', 'Collection Management');
+      formData.append('collectionName', collectionName.trim());
+      
+      // Create a collection info PDF file
+      const userDescription = collectionDescription.trim() ? `\n\nDescription:\n${collectionDescription.trim()}` : '';
+      const collectionInfo = `Collection: ${collectionName.trim()}
+
+This is a collection folder for organizing study materials.${userDescription}
+
+Created on: ${new Date().toLocaleDateString()}
+
+Instructions:
+- Click "Upload to ${collectionName.trim()}" to add files
+- Use the search bar to find specific materials
+- Click "View" to preview files
+- Files are protected from download and screenshots
+
+Happy studying! 📚`;
+      
+      const dummyContent = '%PDF-1.4\n1 0 obj\n<<\n/Type /Catalog\n/Pages 2 0 R\n>>\nendobj\n2 0 obj\n<<\n/Type /Pages\n/Kids [3 0 R]\n/Count 1\n>>\nendobj\n3 0 obj\n<<\n/Type /Page\n/Parent 2 0 R\n/MediaBox [0 0 612 792]\n/Contents 4 0 R\n>>\nendobj\n4 0 obj\n<<\n/Length 44\n>>\nstream\nBT\n/F1 12 Tf\n72 720 Td\n(Collection Info) Tj\nET\nendstream\nendobj\nxref\n0 5\n0000000000 65535 f \n0000000009 00000 n \n0000000058 00000 n \n0000000115 00000 n \n0000000204 00000 n \ntrailer\n<<\n/Size 5\n/Root 1 0 R\n>>\nstartxref\n297\n%%EOF';
+      const dummyBlob = new Blob([dummyContent], { type: 'application/pdf' });
+      const dummyFile = Object.assign(dummyBlob, { 
+        name: `${collectionName.trim()}-collection-info.pdf`,
+        lastModified: Date.now()
+      }) as File;
+      formData.append('file', dummyFile);
+      
+      await uploadStudyMaterial(formData);
+      
+      setLoading(false);
+      setCollectionName('');
+      setCollectionDescription('');
+      onCreated();
+      onClose();
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to create collection');
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={v => { if (!v) onClose(); }}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Create New Collection</DialogTitle>
+          <DialogDescription>Create a new folder to organize your study materials.</DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className='space-y-4'>
+          <div>
+            <Label>Collection Name *</Label>
+            <Input 
+              value={collectionName} 
+              onChange={e => setCollectionName(e.target.value)} 
+              placeholder='Enter collection name'
+              required 
+              maxLength={50} 
+            />
+          </div>
+          <div>
+            <Label>Description (Optional)</Label>
+            <Input 
+              value={collectionDescription} 
+              onChange={e => setCollectionDescription(e.target.value)} 
+              placeholder='Describe what this collection is for...'
+              maxLength={200} 
+            />
+          </div>
+          {error && <div className='text-red-500 text-sm'>{error}</div>}
+          <DialogFooter>
+            <DialogClose asChild>
+              <button type='button' className='px-4 py-2 rounded bg-gray-200'>Cancel</button>
+            </DialogClose>
+            <button type='submit' className='px-4 py-2 rounded bg-blue-600 text-white' disabled={loading}>
+              {loading ? 'Creating...' : 'Create Collection'}
+            </button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function StudyMaterialUploadDialog({ open, onClose, onUploaded, collectionName }: { open: boolean; onClose: () => void; onUploaded: () => void; collectionName: string }) {
+  const [title, setTitle] = React.useState('');
+  const [description, setDescription] = React.useState('');
+  const [subject, setSubject] = React.useState('');
+  const [file, setFile] = React.useState<File | null>(null);
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    if (!title || !file) {
       setError('Please fill all required fields.');
       return;
     }
@@ -56,7 +155,7 @@ function StudyMaterialUploadDialog({ open, onClose, onUploaded, collections }: {
     formData.append('description', description);
     formData.append('subject', subject);
     formData.append('file', file);
-    formData.append('collectionName', newCollection || collection);
+    formData.append('collectionName', collectionName);
     setLoading(true);
     try {
       await uploadStudyMaterial(formData);
@@ -73,8 +172,8 @@ function StudyMaterialUploadDialog({ open, onClose, onUploaded, collections }: {
     <Dialog open={open} onOpenChange={v => { if (!v) onClose(); }}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Upload Study Material</DialogTitle>
-          <DialogDescription>Upload a new study material file (PDF, DOC, PPT, Image).</DialogDescription>
+          <DialogTitle>Upload to {collectionName}</DialogTitle>
+          <DialogDescription>Upload a new study material file to this collection.</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className='space-y-4'>
           <div>
@@ -92,23 +191,6 @@ function StudyMaterialUploadDialog({ open, onClose, onUploaded, collections }: {
           <div>
             <Label>File *</Label>
             <Input type='file' accept='.pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.mp4,.webm,.ogg' onChange={e => setFile(e.target.files?.[0] || null)} required />
-          </div>
-          <div>
-            <Label>Collection *</Label>
-            <Select value={collection} onValueChange={setCollection} disabled={!!newCollection}>
-              <SelectTrigger>
-                <SelectValue placeholder='Select collection' />
-              </SelectTrigger>
-              <SelectContent>
-                {collections.map(col => (
-                  <SelectItem key={col} value={col}>{col}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <div className='mt-2'>
-              <Label>Or create new collection</Label>
-              <Input value={newCollection} onChange={e => setNewCollection(e.target.value)} placeholder='New collection name' maxLength={50} disabled={!!collection} />
-            </div>
           </div>
           {error && <div className='text-red-500 text-sm'>{error}</div>}
           <DialogFooter>
@@ -152,7 +234,7 @@ function StudyMaterialViewer({ open, onClose, material, user }: { open: boolean;
   }, [open]);
 
   if (!material) return null;
-  const fileUrl = material.fileUrl.startsWith('http') ? material.fileUrl : `${import.meta.env.VITE_API_BASE_URL?.replace('/api','') || ''}${material.fileUrl}`;
+  const fileUrl = material.fileUrl.startsWith('http') ? material.fileUrl : `${import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:5050'}${material.fileUrl}`;
   const isPDF = material.fileType === 'pdf';
   const isImage = ['jpg', 'jpeg', 'png'].includes(material.fileType);
   const isVideo = ['mp4', 'webm', 'ogg'].includes(material.fileType);
@@ -231,14 +313,24 @@ function StudyMaterialViewer({ open, onClose, material, user }: { open: boolean;
 const StudyMaterials = () => {
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
-  const [subjectFilter, setSubjectFilter] = useState('all');
-  const [collectionFilter, setCollectionFilter] = useState('all');
-  const [materials, setMaterials] = useState<any[]>([]);
   const [collections, setCollections] = useState<string[]>([]);
+  const [materials, setMaterials] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentCollection, setCurrentCollection] = useState<string | null>(null);
   const [showUpload, setShowUpload] = useState(false);
+  const [showCreateCollection, setShowCreateCollection] = useState(false);
   const [viewMaterial, setViewMaterial] = useState<any | null>(null);
+
+  // Group materials by collection
+  const materialsByCollection = materials.reduce((acc, material) => {
+    const collection = material.collectionName || 'Uncategorized';
+    if (!acc[collection]) {
+      acc[collection] = [];
+    }
+    acc[collection].push(material);
+    return acc;
+  }, {} as Record<string, any[]>);
 
   React.useEffect(() => {
     const fetchCollections = async () => {
@@ -256,7 +348,7 @@ const StudyMaterials = () => {
       setError(null);
       try {
         const params: any = {};
-        if (collectionFilter !== 'all') params.collectionName = collectionFilter;
+        if (currentCollection) params.collectionName = currentCollection;
         const res = await getStudyMaterials(params);
         setMaterials(res.data.data || []);
       } catch (err: any) {
@@ -268,23 +360,35 @@ const StudyMaterials = () => {
       }
     };
     fetchMaterials();
-  }, [collectionFilter]);
+  }, [currentCollection]);
 
   const filteredMaterials = materials.filter((material) => {
-    const matchesSearch =
-      material.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      material.subject.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesSubject =
-      subjectFilter === 'all' || material.subject === subjectFilter;
-
-    return matchesSearch && matchesSubject;
+    return material.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           material.subject.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
   const getFileTypeIcon = (fileType: string) => {
-    return <FileText className='h-4 w-4' />;
+    switch (fileType?.toLowerCase()) {
+      case 'pdf':
+        return <FileText className='h-4 w-4 text-red-500' />;
+      case 'doc':
+      case 'docx':
+        return <FileText className='h-4 w-4 text-blue-500' />;
+      case 'ppt':
+      case 'pptx':
+        return <FileText className='h-4 w-4 text-orange-500' />;
+      case 'jpg':
+      case 'jpeg':
+      case 'png':
+        return <FileText className='h-4 w-4 text-green-500' />;
+      case 'mp4':
+      case 'webm':
+      case 'ogg':
+        return <FileText className='h-4 w-4 text-purple-500' />;
+      default:
+        return <File className='h-4 w-4 text-gray-500' />;
+    }
   };
-
-  const subjects = [...new Set(materials.map((m) => m.subject))];
 
   const handleDelete = async (material: any) => {
     if (!window.confirm('Are you sure you want to delete this material?')) return;
@@ -304,7 +408,7 @@ const StudyMaterials = () => {
         setError(null);
         try {
           const params: any = {};
-          if (collectionFilter !== 'all') params.collectionName = collectionFilter;
+          if (currentCollection) params.collectionName = currentCollection;
           const res = await getStudyMaterials(params);
           setMaterials(res.data.data || []);
         } catch (err: any) {
@@ -320,6 +424,33 @@ const StudyMaterials = () => {
       setError(err.response?.data?.message || 'Failed to delete material');
       setLoading(false);
     }
+  };
+
+  const refreshData = async () => {
+    const fetchCollections = async () => {
+      try {
+        const res = await getStudyMaterialCollections();
+        setCollections(res.data.data || []);
+      } catch {}
+    };
+    fetchCollections();
+    const fetchMaterials = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const params: any = {};
+        if (currentCollection) params.collectionName = currentCollection;
+        const res = await getStudyMaterials(params);
+        setMaterials(res.data.data || []);
+      } catch (err: any) {
+        setError(
+          err.response?.data?.message || 'Failed to fetch study materials'
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchMaterials();
   };
 
   if (loading) {
@@ -348,165 +479,234 @@ const StudyMaterials = () => {
       <div className='space-y-6'>
         {/* Header */}
         <div className='flex items-center justify-between'>
-          <div>
-            <h1 className='text-3xl font-bold mb-2'>Study Materials</h1>
-            <p className='text-gray-600'>
-              Access your learning resources and study materials
-            </p>
+          <div className='flex items-center space-x-4'>
+            {currentCollection && (
+              <Button
+                variant='outline'
+                onClick={() => setCurrentCollection(null)}
+                className='flex items-center space-x-2'
+              >
+                <ArrowLeft className='h-4 w-4' />
+                Back to Collections
+              </Button>
+            )}
+            <div>
+              <h1 className='text-3xl font-bold mb-2'>
+                {currentCollection ? currentCollection : 'Study Materials'}
+              </h1>
+              <p className='text-gray-600'>
+                {currentCollection 
+                  ? `Files in ${currentCollection}` 
+                  : 'Browse your learning resources by collection'
+                }
+              </p>
+            </div>
           </div>
-          {(user?.role === 'admin' || user?.role === 'tutor') && (
-            <Button onClick={() => setShowUpload(true)}>
-              + Upload Material
-            </Button>
-          )}
+          <div className='flex space-x-2'>
+            {!currentCollection && (user?.role === 'admin' || user?.role === 'tutor') && (
+              <Button onClick={() => setShowCreateCollection(true)} variant='outline' className='flex items-center space-x-2'>
+                <Folder className='h-4 w-4' />
+                Create Collection
+              </Button>
+            )}
+            {currentCollection && (user?.role === 'admin' || user?.role === 'tutor') && (
+              <Button onClick={() => setShowUpload(true)} className='flex items-center space-x-2'>
+                <Upload className='h-4 w-4' />
+                Upload to {currentCollection}
+              </Button>
+            )}
+          </div>
         </div>
 
-        {/* Filters */}
-        <div className='flex flex-col sm:flex-row gap-4'>
-          <div className='flex-1'>
+        {/* Search */}
+        {currentCollection && (
+          <div className='flex-1 max-w-md'>
             <Input
-              placeholder='Search materials or subjects...'
+              placeholder='Search files in this collection...'
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <Select value={subjectFilter} onValueChange={setSubjectFilter}>
-            <SelectTrigger className='w-[180px]'>
-              <SelectValue placeholder='Filter by subject' />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value='all'>All Subjects</SelectItem>
-              {[...new Set(materials.map((m) => m.subject))].map((subject) => (
-                <SelectItem key={subject} value={subject}>
-                  {subject}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={collectionFilter} onValueChange={setCollectionFilter}>
-            <SelectTrigger className='w-[180px]'>
-              <SelectValue placeholder='Filter by collection' />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value='all'>All Collections</SelectItem>
-              {collections.map((col) => (
-                <SelectItem key={col} value={col}>
-                  {col}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        )}
 
-        {/* Materials Stats */}
-        <div className='grid grid-cols-1 md:grid-cols-4 gap-4'>
-          <Card>
-            <CardContent className='p-4'>
-              <div className='text-2xl font-bold'>{materials.length}</div>
-              <p className='text-sm text-gray-600'>Total Materials</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className='p-4'>
-              <div className='text-2xl font-bold text-blue-600'>
-                {subjects.length}
-              </div>
-              <p className='text-sm text-gray-600'>Subjects</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className='p-4'>
-              <div className='text-2xl font-bold text-green-600'>
-                {materials.filter((m) => m.fileType === 'pdf').length}
-              </div>
-              <p className='text-sm text-gray-600'>PDF Files</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className='p-4'>
-              <div className='text-2xl font-bold text-purple-600'>
-                Protected
-              </div>
-              <p className='text-sm text-gray-600'>View Only</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Materials Grid */}
-        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-          {filteredMaterials.map((material) => (
-            <Card
-              key={material.id}
-              className='hover:shadow-lg transition-shadow'
-            >
-              <CardHeader>
-                <div className='flex items-start justify-between'>
-                  <div className='flex items-center space-x-2'>
-                    {/* File type icon */}
-                    <Badge variant='outline'>
-                      {material.fileType?.toUpperCase()}
-                    </Badge>
+        {/* Collections View */}
+        {!currentCollection && (
+          <>
+            {/* Collections Stats */}
+            <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+              <Card>
+                <CardContent className='p-4'>
+                  <div className='text-2xl font-bold'>{collections.length}</div>
+                  <p className='text-sm text-gray-600'>Collections</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className='p-4'>
+                  <div className='text-2xl font-bold text-blue-600'>
+                    {materials.length}
                   </div>
-                </div>
-                <CardTitle className='text-lg'>{material.title}</CardTitle>
-                <CardDescription>{material.description}</CardDescription>
-                <div className='text-xs text-gray-500 mt-1'>
-                  Collection: {material.collectionName || '-'}
-                </div>
-              </CardHeader>
-              <CardContent className='space-y-4'>
-                <div className='text-sm text-gray-600'>
-                  <p>📚 Subject: {material.subject}</p>
-                  <p>👨‍🏫 Uploaded by: {material.uploadedBy?.name || material.uploadedByName || '-'}</p>
-                  <p>📅 Date: {material.uploadedAt}</p>
-                  <p>📁 File: {material.fileName}</p>
-                </div>
-                <div className='flex space-x-2'>
-                  <Button className='flex-1' onClick={() => setViewMaterial(material)}>View</Button>
-                  {(user?.role === 'admin' || (user?.role === 'tutor' && (material.uploadedBy?._id === user.id || material.uploadedBy === user.id))) && (
-                    <>
-                      <Button variant='destructive' size='sm' onClick={() => handleDelete(material)}>
-                        Delete
+                  <p className='text-sm text-gray-600'>Total Files</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className='p-4'>
+                  <div className='text-2xl font-bold text-green-600'>
+                    Protected
+                  </div>
+                  <p className='text-sm text-gray-600'>View Only</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Collections Grid */}
+            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'>
+              {collections.map((collection) => {
+                const collectionMaterials = materialsByCollection[collection] || [];
+                const fileCount = collectionMaterials.length;
+                const subjects = [...new Set(collectionMaterials.map(m => m.subject))];
+                
+                return (
+                  <Card
+                    key={collection}
+                    className='hover:shadow-lg transition-shadow cursor-pointer group'
+                    onClick={() => setCurrentCollection(collection)}
+                  >
+                    <CardHeader className='pb-3'>
+                      <div className='flex items-center justify-between'>
+                        <Folder className='h-8 w-8 text-blue-500 group-hover:text-blue-600' />
+                        <Badge variant='outline'>{fileCount} files</Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <CardTitle className='text-lg mb-2'>{collection}</CardTitle>
+                      <div className='text-sm text-gray-600 space-y-1'>
+                        <p>📁 {fileCount} materials</p>
+                        {subjects.length > 0 && (
+                          <p>📚 {subjects.slice(0, 2).join(', ')}{subjects.length > 2 ? '...' : ''}</p>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </>
+        )}
+
+        {/* Files View */}
+        {currentCollection && (
+          <>
+            {/* Files Stats */}
+            <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+              <Card>
+                <CardContent className='p-4'>
+                  <div className='text-2xl font-bold'>{filteredMaterials.length}</div>
+                  <p className='text-sm text-gray-600'>Files</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className='p-4'>
+                  <div className='text-2xl font-bold text-blue-600'>
+                    {[...new Set(filteredMaterials.map(m => m.subject))].length}
+                  </div>
+                  <p className='text-sm text-gray-600'>Subjects</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className='p-4'>
+                  <div className='text-2xl font-bold text-green-600'>
+                    {filteredMaterials.filter(m => m.fileType === 'pdf').length}
+                  </div>
+                  <p className='text-sm text-gray-600'>PDF Files</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Files Grid */}
+            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+              {filteredMaterials.map((material) => (
+                <Card
+                  key={material.id}
+                  className='hover:shadow-lg transition-shadow'
+                >
+                  <CardHeader>
+                    <div className='flex items-start justify-between'>
+                      <div className='flex items-center space-x-2'>
+                        {getFileTypeIcon(material.fileType)}
+                        <Badge variant='outline'>
+                          {material.fileType?.toUpperCase()}
+                        </Badge>
+                      </div>
+                    </div>
+                    <CardTitle className='text-lg'>{material.title}</CardTitle>
+                    <CardDescription>{material.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent className='space-y-4'>
+                    <div className='text-sm text-gray-600'>
+                      <p>📚 Subject: {material.subject}</p>
+                      <p>👨‍🏫 Uploaded by: {material.uploadedBy?.name || material.uploadedByName || '-'}</p>
+                      <p>📅 Date: {material.uploadedAt}</p>
+                      <p>📁 File: {material.fileName}</p>
+                    </div>
+                    <div className='flex space-x-2 mt-4'>
+                      <Button className='flex-1' onClick={() => setViewMaterial(material)}>
+                        <Eye className='h-4 w-4 mr-2' />
+                        View
                       </Button>
-                    </>
-                  )}
-                </div>
-                <div className='text-xs text-gray-500 bg-gray-50 p-2 rounded'>
-                  Content is protected from download and screenshots
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-        {showUpload && <StudyMaterialUploadDialog open={showUpload} onClose={() => setShowUpload(false)} onUploaded={() => {
-          setShowUpload(false);
-          // Refresh materials and collections after upload
-          const fetchCollections = async () => {
-            try {
-              const res = await getStudyMaterialCollections();
-              setCollections(res.data.data || []);
-            } catch {}
-          };
-          fetchCollections();
-          const fetchMaterials = async () => {
-            setLoading(true);
-            setError(null);
-            try {
-              const params: any = {};
-              if (collectionFilter !== 'all') params.collectionName = collectionFilter;
-              const res = await getStudyMaterials(params);
-              setMaterials(res.data.data || []);
-            } catch (err: any) {
-              setError(
-                err.response?.data?.message || 'Failed to fetch study materials'
-              );
-            } finally {
-              setLoading(false);
-            }
-          };
-          fetchMaterials();
-        }} collections={collections} />}
-        {viewMaterial && <StudyMaterialViewer open={!!viewMaterial} onClose={() => setViewMaterial(null)} material={viewMaterial} user={user} />}
+                      {(user?.role === 'admin' || (user?.role === 'tutor' && (material.uploadedBy?._id === user.id || material.uploadedBy === user.id))) && (
+                        <Button variant='destructive' size='sm' onClick={() => handleDelete(material)}>
+                          Delete
+                        </Button>
+                      )}
+                    </div>
+                    <div className='text-xs text-gray-500 bg-gray-50 p-2 rounded'>
+                      Content is protected from download and screenshots
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {filteredMaterials.length === 0 && (
+              <div className='text-center py-12'>
+                <FolderOpen className='h-12 w-12 text-gray-400 mx-auto mb-4' />
+                <p className='text-gray-500'>No files found in this collection</p>
+                {searchTerm && (
+                  <p className='text-sm text-gray-400 mt-2'>Try adjusting your search terms</p>
+                )}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Create Collection Dialog */}
+        {showCreateCollection && (
+          <CreateCollectionDialog 
+            open={showCreateCollection} 
+            onClose={() => setShowCreateCollection(false)} 
+            onCreated={refreshData} 
+          />
+        )}
+
+        {/* Upload Dialog */}
+        {showUpload && (
+          <StudyMaterialUploadDialog 
+            open={showUpload} 
+            onClose={() => setShowUpload(false)} 
+            onUploaded={refreshData} 
+            collectionName={currentCollection || ''} 
+          />
+        )}
+        
+        {/* Viewer Dialog */}
+        {viewMaterial && (
+          <StudyMaterialViewer 
+            open={!!viewMaterial} 
+            onClose={() => setViewMaterial(null)} 
+            material={viewMaterial} 
+            user={user} 
+          />
+        )}
       </div>
     </DashboardLayout>
   );
