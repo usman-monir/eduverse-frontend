@@ -1,25 +1,41 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { FileText, Download, Eye, Shield, Loader2, Folder, FolderOpen, Upload, ArrowLeft, File } from 'lucide-react';
-import DashboardLayout from '@/components/Layout/DashboardLayout';
-import { useAuth } from '@/contexts/AuthContext';
-import { getStudyMaterials, getStudyMaterialCollections, uploadStudyMaterial, deleteStudyMaterial } from '@/services/api';
+} from "@/components/ui/select";
+import {
+  FileText,
+  Download,
+  Eye,
+  Shield,
+  Loader2,
+  Folder,
+  FolderOpen,
+  Upload,
+  ArrowLeft,
+  File,
+} from "lucide-react";
+import DashboardLayout from "@/components/Layout/DashboardLayout";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  getStudyMaterials,
+  getStudyMaterialCollections,
+  uploadStudyMaterial,
+  deleteStudyMaterial,
+} from "@/services/api";
 import {
   Dialog,
   DialogContent,
@@ -28,15 +44,23 @@ import {
   DialogDescription,
   DialogFooter,
   DialogClose,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { useRef } from 'react';
-import { Document, Page, pdfjs } from 'react-pdf';
-pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.js';
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { useRef } from "react";
+import { Document, Page, pdfjs } from "react-pdf";
+pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.js";
 
-function CreateCollectionDialog({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: () => void }) {
-  const [collectionName, setCollectionName] = React.useState('');
-  const [collectionDescription, setCollectionDescription] = React.useState('');
+function CreateCollectionDialog({
+  open,
+  onClose,
+  onCreated,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onCreated: () => void;
+}) {
+  const [collectionName, setCollectionName] = React.useState("");
+  const [collectionDescription, setCollectionDescription] = React.useState("");
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -44,89 +68,108 @@ function CreateCollectionDialog({ open, onClose, onCreated }: { open: boolean; o
     e.preventDefault();
     setError(null);
     if (!collectionName.trim()) {
-      setError('Please enter a collection name.');
+      setError("Please enter a collection name.");
       return;
     }
     setLoading(true);
     try {
       // Create a collection info file
       const formData = new FormData();
-      formData.append('title', `${collectionName.trim()} - Collection Info`);
-      formData.append('description', collectionDescription.trim() || `This collection contains study materials for ${collectionName.trim()}. Upload your files here to organize your learning resources.`);
-      formData.append('subject', 'Collection Management');
-      formData.append('collectionName', collectionName.trim());
-      
+      formData.append("title", `${collectionName.trim()} - Collection Info`);
+      formData.append(
+        "description",
+        collectionDescription.trim() ||
+          `This collection contains study materials for ${collectionName.trim()}. Upload your files here to organize your learning resources.`
+      );
+      formData.append("subject", "Collection Management");
+      formData.append("collectionName", collectionName.trim());
+
       // Create a collection info PDF file
-      const userDescription = collectionDescription.trim() ? `\n\nDescription:\n${collectionDescription.trim()}` : '';
+      const userDescription = collectionDescription.trim()
+        ? `\n\nDescription:\n${collectionDescription.trim()}`
+        : "";
       const collectionInfo = `Collection: ${collectionName.trim()}
 
 This is a collection folder for organizing study materials.${userDescription}
 
-Created on: ${new Date().toLocaleDateString()}
+              Created on: ${new Date().toLocaleDateString()}
 
-Instructions:
-- Click "Upload to ${collectionName.trim()}" to add files
-- Use the search bar to find specific materials
-- Click "View" to preview files
-- Files are protected from download and screenshots
+              Instructions:
+              - Click "Upload to ${collectionName.trim()}" to add files
+              - Use the search bar to find specific materials
+              - Click "View" to preview files
+              - Files are protected from download and screenshots
 
-Happy studying! 📚`;
-      
-      const dummyContent = '%PDF-1.4\n1 0 obj\n<<\n/Type /Catalog\n/Pages 2 0 R\n>>\nendobj\n2 0 obj\n<<\n/Type /Pages\n/Kids [3 0 R]\n/Count 1\n>>\nendobj\n3 0 obj\n<<\n/Type /Page\n/Parent 2 0 R\n/MediaBox [0 0 612 792]\n/Contents 4 0 R\n>>\nendobj\n4 0 obj\n<<\n/Length 44\n>>\nstream\nBT\n/F1 12 Tf\n72 720 Td\n(Collection Info) Tj\nET\nendstream\nendobj\nxref\n0 5\n0000000000 65535 f \n0000000009 00000 n \n0000000058 00000 n \n0000000115 00000 n \n0000000204 00000 n \ntrailer\n<<\n/Size 5\n/Root 1 0 R\n>>\nstartxref\n297\n%%EOF';
-      const dummyBlob = new Blob([dummyContent], { type: 'application/pdf' });
-      const dummyFile = Object.assign(dummyBlob, { 
+              Happy studying! 📚`;
+
+      const dummyContent = "%PDF-1.4\n...";
+      const dummyBlob = new Blob([dummyContent], { type: "application/pdf" });
+      const dummyFile = Object.assign(dummyBlob, {
         name: `${collectionName.trim()}-collection-info.pdf`,
-        lastModified: Date.now()
+        lastModified: Date.now(),
       }) as File;
-      formData.append('file', dummyFile);
-      
+      formData.append("file", dummyFile);
+
       await uploadStudyMaterial(formData);
-      
+
       setLoading(false);
-      setCollectionName('');
-      setCollectionDescription('');
+      setCollectionName("");
+      setCollectionDescription("");
       onCreated();
       onClose();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to create collection');
+      setError(err.response?.data?.message || "Failed to create collection");
       setLoading(false);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={v => { if (!v) onClose(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) onClose();
+      }}
+    >
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Create New Collection</DialogTitle>
-          <DialogDescription>Create a new folder to organize your study materials.</DialogDescription>
+          <DialogDescription>
+            Create a new folder to organize your study materials.
+          </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className='space-y-4'>
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label>Collection Name *</Label>
-            <Input 
-              value={collectionName} 
-              onChange={e => setCollectionName(e.target.value)} 
-              placeholder='Enter collection name'
-              required 
-              maxLength={50} 
+            <Input
+              value={collectionName}
+              onChange={(e) => setCollectionName(e.target.value)}
+              placeholder="Enter collection name"
+              required
+              maxLength={50}
             />
           </div>
           <div>
             <Label>Description (Optional)</Label>
-            <Input 
-              value={collectionDescription} 
-              onChange={e => setCollectionDescription(e.target.value)} 
-              placeholder='Describe what this collection is for...'
-              maxLength={200} 
+            <Input
+              value={collectionDescription}
+              onChange={(e) => setCollectionDescription(e.target.value)}
+              placeholder="Describe what this collection is for..."
+              maxLength={200}
             />
           </div>
-          {error && <div className='text-red-500 text-sm'>{error}</div>}
+          {error && <div className="text-red-500 text-sm">{error}</div>}
           <DialogFooter>
             <DialogClose asChild>
-              <button type='button' className='px-4 py-2 rounded bg-gray-200'>Cancel</button>
+              <button type="button" className="px-4 py-2 rounded bg-gray-200">
+                Cancel
+              </button>
             </DialogClose>
-            <button type='submit' className='px-4 py-2 rounded bg-blue-600 text-white' disabled={loading}>
-              {loading ? 'Creating...' : 'Create Collection'}
+            <button
+              type="submit"
+              className="px-4 py-2 rounded bg-blue-600 text-white"
+              disabled={loading}
+            >
+              {loading ? "Creating..." : "Create Collection"}
             </button>
           </DialogFooter>
         </form>
@@ -135,10 +178,20 @@ Happy studying! 📚`;
   );
 }
 
-function StudyMaterialUploadDialog({ open, onClose, onUploaded, collectionName }: { open: boolean; onClose: () => void; onUploaded: () => void; collectionName: string }) {
-  const [title, setTitle] = React.useState('');
-  const [description, setDescription] = React.useState('');
-  const [subject, setSubject] = React.useState('');
+function StudyMaterialUploadDialog({
+  open,
+  onClose,
+  onUploaded,
+  collectionName,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onUploaded: () => void;
+  collectionName: string;
+}) {
+  const [title, setTitle] = React.useState("");
+  const [description, setDescription] = React.useState("");
+  const [subject, setSubject] = React.useState("");
   const [file, setFile] = React.useState<File | null>(null);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -147,15 +200,15 @@ function StudyMaterialUploadDialog({ open, onClose, onUploaded, collectionName }
     e.preventDefault();
     setError(null);
     if (!title || !file) {
-      setError('Please fill all required fields.');
+      setError("Please fill all required fields.");
       return;
     }
     const formData = new FormData();
-    formData.append('title', title);
-    formData.append('description', description);
-    formData.append('subject', subject);
-    formData.append('file', file);
-    formData.append('collectionName', collectionName);
+    formData.append("title", title);
+    formData.append("description", description);
+    formData.append("subject", subject);
+    formData.append("file", file);
+    formData.append("collectionName", collectionName);
     setLoading(true);
     try {
       await uploadStudyMaterial(formData);
@@ -163,41 +216,74 @@ function StudyMaterialUploadDialog({ open, onClose, onUploaded, collectionName }
       onUploaded();
       onClose();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to upload material');
+      setError(err.response?.data?.message || "Failed to upload material");
       setLoading(false);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={v => { if (!v) onClose(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) onClose();
+      }}
+    >
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Upload to {collectionName}</DialogTitle>
-          <DialogDescription>Upload a new study material file to this collection.</DialogDescription>
+          <DialogDescription>
+            Upload a new study material file to this collection.
+          </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className='space-y-4'>
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label>Title *</Label>
-            <Input value={title} onChange={e => setTitle(e.target.value)} required maxLength={100} />
+            <Input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+              maxLength={100}
+            />
           </div>
           <div>
             <Label>Description</Label>
-            <Input value={description} onChange={e => setDescription(e.target.value)} maxLength={500} />
+            <Input
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              maxLength={500}
+            />
           </div>
           <div>
             <Label>Subject</Label>
-            <Input value={subject} onChange={e => setSubject(e.target.value)} maxLength={50} />
+            <Input
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              maxLength={50}
+            />
           </div>
           <div>
             <Label>File *</Label>
-            <Input type='file' accept='.pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.mp4,.webm,.ogg' onChange={e => setFile(e.target.files?.[0] || null)} required />
+            <Input
+              type="file"
+              accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.mp4,.webm,.ogg"
+              onChange={(e) => setFile(e.target.files?.[0] || null)}
+              required
+            />
           </div>
-          {error && <div className='text-red-500 text-sm'>{error}</div>}
+          {error && <div className="text-red-500 text-sm">{error}</div>}
           <DialogFooter>
             <DialogClose asChild>
-              <button type='button' className='px-4 py-2 rounded bg-gray-200'>Cancel</button>
+              <button type="button" className="px-4 py-2 rounded bg-gray-200">
+                Cancel
+              </button>
             </DialogClose>
-            <button type='submit' className='px-4 py-2 rounded bg-blue-600 text-white' disabled={loading}>{loading ? 'Uploading...' : 'Upload'}</button>
+            <button
+              type="submit"
+              className="px-4 py-2 rounded bg-blue-600 text-white"
+              disabled={loading}
+            >
+              {loading ? "Uploading..." : "Upload"}
+            </button>
           </DialogFooter>
         </form>
       </DialogContent>
@@ -205,12 +291,28 @@ function StudyMaterialUploadDialog({ open, onClose, onUploaded, collectionName }
   );
 }
 
-function StudyMaterialViewer({ open, onClose, material, user }: { open: boolean; onClose: () => void; material: any; user: any }) {
+function StudyMaterialViewer({
+  open,
+  onClose,
+  material,
+  user,
+}: {
+  open: boolean;
+  onClose: () => void;
+  material: any;
+  user: any;
+}) {
   const viewerRef = useRef<HTMLDivElement>(null);
   const [numPages, setNumPages] = React.useState<number>(0);
+  const [pdfBlobUrl, setPdfBlobUrl] = React.useState<string | null>(null);
 
   // Watermark text: viewer email + uploader name/email
-  const watermarkText = `Viewer: ${user?.email || ''} \nUploaded by: ${material.uploadedBy?.name || material.uploadedByName || material.uploadedBy?.email || ''}`;
+  const watermarkText = `Viewer: ${user?.email || ""} \nUploaded by: ${
+    material.uploadedBy?.name ||
+    material.uploadedByName ||
+    material.uploadedBy?.email ||
+    ""
+  }`;
 
   // Prevent right-click, print, and selection
   React.useEffect(() => {
@@ -221,58 +323,122 @@ function StudyMaterialViewer({ open, onClose, material, user }: { open: boolean;
     };
     const handleKeyDown = (e: KeyboardEvent) => {
       // Block Ctrl+P (print), Ctrl+S (save), Ctrl+C (copy)
-      if ((e.ctrlKey || e.metaKey) && ['p', 's', 'c'].includes(e.key.toLowerCase())) {
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        ["p", "s", "c"].includes(e.key.toLowerCase())
+      ) {
         e.preventDefault();
       }
     };
-    document.addEventListener('contextmenu', handleContextMenu);
-    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener("contextmenu", handleContextMenu);
+    document.addEventListener("keydown", handleKeyDown);
     return () => {
-      document.removeEventListener('contextmenu', handleContextMenu);
-      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener("contextmenu", handleContextMenu);
+      document.removeEventListener("keydown", handleKeyDown);
     };
   }, [open]);
 
-  if (!material) return null;
-  const fileUrl = material.fileUrl.startsWith('http') ? material.fileUrl : `${import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:5050'}${material.fileUrl}`;
-  const isPDF = material.fileType === 'pdf';
-  const isImage = ['jpg', 'jpeg', 'png'].includes(material.fileType);
-  const isVideo = ['mp4', 'webm', 'ogg'].includes(material.fileType);
+  // Fetch PDF with Authorization header if needed
+  React.useEffect(() => {
+    const fetchPdf = async () => {
+      if (material.fileType === "pdf") {
+        const fileUrl = `${import.meta.env.VITE_API_BASE_URL}/study-materials/${
+          material.id || material._id
+        }/file`;
+        const token = localStorage.getItem("token");
+        try {
+          const response = await fetch(fileUrl, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+          if (!response.ok) throw new Error("Failed to fetch PDF");
+          const blob = await response.blob();
+          const url = URL.createObjectURL(blob);
+          setPdfBlobUrl(url);
+        } catch (err) {
+          setPdfBlobUrl(null);
+        }
+      }
+      // Cleanup blob URL on close/unmount
+      return () => {
+        if (pdfBlobUrl) {
+          URL.revokeObjectURL(pdfBlobUrl);
+        }
+      };
+    };
+    if (open) fetchPdf();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [material, open]);
+
+  console.log("Viewing material:", material);
+
+  if (!material || (!material.id && !material._id)) return null;
+  const fileUrl = `${import.meta.env.VITE_API_BASE_URL}/study-materials/${
+    material.id || material._id
+  }/file`;
+
+  console.log("File URL:", fileUrl);
+
+  const isPDF = material.fileType === "pdf";
+  const isImage = ["jpg", "jpeg", "png"].includes(material.fileType);
+  const isVideo = ["mp4", "webm", "ogg"].includes(material.fileType);
 
   return (
-    <Dialog open={open} onOpenChange={v => { if (!v) onClose(); }}>
-      <DialogContent className='max-w-3xl'>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) onClose();
+      }}
+    >
+      <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle>{material.title}</DialogTitle>
-          <DialogDescription>Protected viewing. Download/print/copy is disabled.</DialogDescription>
+          <DialogDescription>
+            Protected viewing. Download/print/copy is disabled.
+          </DialogDescription>
         </DialogHeader>
         <div
           ref={viewerRef}
-          className='relative bg-gray-100 rounded shadow overflow-auto max-h-[70vh] flex flex-col items-center justify-start select-none'
-          style={{ userSelect: 'none' }}
+          className="relative bg-gray-100 rounded shadow overflow-auto max-h-[70vh] flex flex-col items-center justify-start select-none"
+          style={{ userSelect: "none" }}
         >
           {/* Dynamic Watermark overlay */}
           <div
             className="pointer-events-none select-none fixed top-4 left-1/2 -translate-x-1/2 opacity-40 text-2xl font-bold text-gray-700"
             style={{
               zIndex: 9999,
-              animation: 'watermark-move 4s linear infinite alternate',
-              whiteSpace: 'pre',
-              transform: 'translateX(0%) rotate(-20deg)',
-              pointerEvents: 'none',
-              userSelect: 'none',
+              animation: "watermark-move 4s linear infinite alternate",
+              whiteSpace: "pre",
+              transform: "translateX(0%) rotate(-20deg)",
+              pointerEvents: "none",
+              userSelect: "none",
             }}
           >
             {watermarkText}
           </div>
           {/* File rendering */}
           {isPDF && (
-            <div className='w-full flex flex-col items-center' style={{zIndex:1}}>
+            <div
+              className="w-full flex flex-col items-center"
+              style={{ zIndex: 1 }}
+            >
               <Document
-                file={fileUrl}
+                file={pdfBlobUrl || undefined}
                 onLoadSuccess={({ numPages }) => setNumPages(numPages)}
-                loading={<div className='p-8 text-center text-gray-500'>Loading PDF...</div>}
-                error={<div className='p-8 text-center text-red-500'>Failed to load PDF.</div>}
+                loading={
+                  <div className="p-8 text-center text-gray-500">
+                    Loading PDF...
+                  </div>
+                }
+                error={
+                  <div className="p-8 text-center text-red-500">
+                   Loading PDF
+                  </div>
+                }
+                onLoadError={(err) => {
+                  console.error("PDF load error:", err);
+                }}
               >
                 {Array.from(new Array(numPages), (el, index) => (
                   <Page
@@ -287,17 +453,31 @@ function StudyMaterialViewer({ open, onClose, material, user }: { open: boolean;
             </div>
           )}
           {isImage && (
-            <img src={fileUrl} alt={material.title} className='max-h-[70vh] max-w-full' style={{zIndex:1}} draggable={false} />
+            <img
+              src={fileUrl}
+              alt={material.title}
+              className="max-h-[70vh] max-w-full"
+              style={{ zIndex: 1 }}
+              draggable={false}
+            />
           )}
           {isVideo && (
-            <video src={fileUrl} controls className='max-h-[70vh] max-w-full' style={{zIndex:1}} />
+            <video
+              src={fileUrl}
+              controls
+              className="max-h-[70vh] max-w-full"
+              style={{ zIndex: 1 }}
+            />
           )}
           {!isPDF && !isImage && !isVideo && (
-            <div className='p-8 text-center text-gray-500'>Cannot preview this file type.</div>
+            <div className="p-8 text-center text-gray-500">
+              Cannot preview this file type.
+            </div>
           )}
         </div>
-        <div className='text-xs text-gray-500 mt-2'>
-          Downloading, printing, copying, and screenshots are discouraged. Content is protected.
+        <div className="text-xs text-gray-500 mt-2">
+          Downloading, printing, copying, and screenshots are discouraged.
+          Content is protected.
         </div>
         <style>{`
           @keyframes watermark-move {
@@ -312,19 +492,21 @@ function StudyMaterialViewer({ open, onClose, material, user }: { open: boolean;
 
 const StudyMaterials = () => {
   const { user } = useAuth();
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [collections, setCollections] = useState<string[]>([]);
   const [materials, setMaterials] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentCollection, setCurrentCollection] = useState<string | null>(null);
+  const [currentCollection, setCurrentCollection] = useState<string | null>(
+    null
+  );
   const [showUpload, setShowUpload] = useState(false);
   const [showCreateCollection, setShowCreateCollection] = useState(false);
   const [viewMaterial, setViewMaterial] = useState<any | null>(null);
 
   // Group materials by collection
   const materialsByCollection = materials.reduce((acc, material) => {
-    const collection = material.collectionName || 'Uncategorized';
+    const collection = material.collectionName || "Uncategorized";
     if (!acc[collection]) {
       acc[collection] = [];
     }
@@ -353,7 +535,7 @@ const StudyMaterials = () => {
         setMaterials(res.data.data || []);
       } catch (err: any) {
         setError(
-          err.response?.data?.message || 'Failed to fetch study materials'
+          err.response?.data?.message || "Failed to fetch study materials"
         );
       } finally {
         setLoading(false);
@@ -363,35 +545,38 @@ const StudyMaterials = () => {
   }, [currentCollection]);
 
   const filteredMaterials = materials.filter((material) => {
-    return material.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           material.subject.toLowerCase().includes(searchTerm.toLowerCase());
+    return (
+      material.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      material.subject.toLowerCase().includes(searchTerm.toLowerCase())
+    );
   });
 
   const getFileTypeIcon = (fileType: string) => {
     switch (fileType?.toLowerCase()) {
-      case 'pdf':
-        return <FileText className='h-4 w-4 text-red-500' />;
-      case 'doc':
-      case 'docx':
-        return <FileText className='h-4 w-4 text-blue-500' />;
-      case 'ppt':
-      case 'pptx':
-        return <FileText className='h-4 w-4 text-orange-500' />;
-      case 'jpg':
-      case 'jpeg':
-      case 'png':
-        return <FileText className='h-4 w-4 text-green-500' />;
-      case 'mp4':
-      case 'webm':
-      case 'ogg':
-        return <FileText className='h-4 w-4 text-purple-500' />;
+      case "pdf":
+        return <FileText className="h-4 w-4 text-red-500" />;
+      case "doc":
+      case "docx":
+        return <FileText className="h-4 w-4 text-blue-500" />;
+      case "ppt":
+      case "pptx":
+        return <FileText className="h-4 w-4 text-orange-500" />;
+      case "jpg":
+      case "jpeg":
+      case "png":
+        return <FileText className="h-4 w-4 text-green-500" />;
+      case "mp4":
+      case "webm":
+      case "ogg":
+        return <FileText className="h-4 w-4 text-purple-500" />;
       default:
-        return <File className='h-4 w-4 text-gray-500' />;
+        return <File className="h-4 w-4 text-gray-500" />;
     }
   };
 
   const handleDelete = async (material: any) => {
-    if (!window.confirm('Are you sure you want to delete this material?')) return;
+    if (!window.confirm("Are you sure you want to delete this material?"))
+      return;
     setLoading(true);
     try {
       await deleteStudyMaterial(material._id || material.id);
@@ -413,7 +598,7 @@ const StudyMaterials = () => {
           setMaterials(res.data.data || []);
         } catch (err: any) {
           setError(
-            err.response?.data?.message || 'Failed to fetch study materials'
+            err.response?.data?.message || "Failed to fetch study materials"
           );
         } finally {
           setLoading(false);
@@ -421,7 +606,7 @@ const StudyMaterials = () => {
       };
       fetchMaterials();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to delete material');
+      setError(err.response?.data?.message || "Failed to delete material");
       setLoading(false);
     }
   };
@@ -444,7 +629,7 @@ const StudyMaterials = () => {
         setMaterials(res.data.data || []);
       } catch (err: any) {
         setError(
-          err.response?.data?.message || 'Failed to fetch study materials'
+          err.response?.data?.message || "Failed to fetch study materials"
         );
       } finally {
         setLoading(false);
@@ -456,9 +641,9 @@ const StudyMaterials = () => {
   if (loading) {
     return (
       <DashboardLayout>
-        <div className='flex items-center justify-center h-64'>
-          <Loader2 className='h-8 w-8 animate-spin' />
-          <span className='ml-2'>Loading study materials...</span>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin" />
+          <span className="ml-2">Loading study materials...</span>
         </div>
       </DashboardLayout>
     );
@@ -467,8 +652,8 @@ const StudyMaterials = () => {
   if (error) {
     return (
       <DashboardLayout>
-        <div className='text-center py-12'>
-          <p className='text-red-500'>Error loading study materials: {error}</p>
+        <div className="text-center py-12">
+          <p className="text-red-500">Error loading study materials: {error}</p>
         </div>
       </DashboardLayout>
     );
@@ -476,53 +661,61 @@ const StudyMaterials = () => {
 
   return (
     <DashboardLayout>
-      <div className='space-y-6'>
+      <div className="space-y-6">
         {/* Header */}
-        <div className='flex items-center justify-between'>
-          <div className='flex items-center space-x-4'>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
             {currentCollection && (
               <Button
-                variant='outline'
+                variant="outline"
                 onClick={() => setCurrentCollection(null)}
-                className='flex items-center space-x-2'
+                className="flex items-center space-x-2"
               >
-                <ArrowLeft className='h-4 w-4' />
+                <ArrowLeft className="h-4 w-4" />
                 Back to Collections
               </Button>
             )}
             <div>
-              <h1 className='text-3xl font-bold mb-2'>
-                {currentCollection ? currentCollection : 'Study Materials'}
+              <h1 className="text-3xl font-bold mb-2">
+                {currentCollection ? currentCollection : "Study Materials"}
               </h1>
-              <p className='text-gray-600'>
-                {currentCollection 
-                  ? `Files in ${currentCollection}` 
-                  : 'Browse your learning resources by collection'
-                }
+              <p className="text-gray-600">
+                {currentCollection
+                  ? `Files in ${currentCollection}`
+                  : "Browse your learning resources by collection"}
               </p>
             </div>
           </div>
-          <div className='flex space-x-2'>
-            {!currentCollection && (user?.role === 'admin' || user?.role === 'tutor') && (
-              <Button onClick={() => setShowCreateCollection(true)} variant='outline' className='flex items-center space-x-2'>
-                <Folder className='h-4 w-4' />
-                Create Collection
-              </Button>
-            )}
-            {currentCollection && (user?.role === 'admin' || user?.role === 'tutor') && (
-              <Button onClick={() => setShowUpload(true)} className='flex items-center space-x-2'>
-                <Upload className='h-4 w-4' />
-                Upload to {currentCollection}
-              </Button>
-            )}
+          <div className="flex space-x-2">
+            {!currentCollection &&
+              (user?.role === "admin" || user?.role === "tutor") && (
+                <Button
+                  onClick={() => setShowCreateCollection(true)}
+                  variant="outline"
+                  className="flex items-center space-x-2"
+                >
+                  <Folder className="h-4 w-4" />
+                  Create Collection
+                </Button>
+              )}
+            {currentCollection &&
+              (user?.role === "admin" || user?.role === "tutor") && (
+                <Button
+                  onClick={() => setShowUpload(true)}
+                  className="flex items-center space-x-2"
+                >
+                  <Upload className="h-4 w-4" />
+                  Upload to {currentCollection}
+                </Button>
+              )}
           </div>
         </div>
 
         {/* Search */}
         {currentCollection && (
-          <div className='flex-1 max-w-md'>
+          <div className="flex-1 max-w-md">
             <Input
-              placeholder='Search files in this collection...'
+              placeholder="Search files in this collection..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -533,56 +726,64 @@ const StudyMaterials = () => {
         {!currentCollection && (
           <>
             {/* Collections Stats */}
-            <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Card>
-                <CardContent className='p-4'>
-                  <div className='text-2xl font-bold'>{collections.length}</div>
-                  <p className='text-sm text-gray-600'>Collections</p>
+                <CardContent className="p-4">
+                  <div className="text-2xl font-bold">{collections.length}</div>
+                  <p className="text-sm text-gray-600">Collections</p>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className='p-4'>
-                  <div className='text-2xl font-bold text-blue-600'>
+                <CardContent className="p-4">
+                  <div className="text-2xl font-bold text-blue-600">
                     {materials.length}
                   </div>
-                  <p className='text-sm text-gray-600'>Total Files</p>
+                  <p className="text-sm text-gray-600">Total Files</p>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className='p-4'>
-                  <div className='text-2xl font-bold text-green-600'>
+                <CardContent className="p-4">
+                  <div className="text-2xl font-bold text-green-600">
                     Protected
                   </div>
-                  <p className='text-sm text-gray-600'>View Only</p>
+                  <p className="text-sm text-gray-600">View Only</p>
                 </CardContent>
               </Card>
             </div>
 
             {/* Collections Grid */}
-            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {collections.map((collection) => {
-                const collectionMaterials = materialsByCollection[collection] || [];
+                const collectionMaterials =
+                  materialsByCollection[collection] || [];
                 const fileCount = collectionMaterials.length;
-                const subjects = [...new Set(collectionMaterials.map(m => m.subject))];
-                
+                const subjects = [
+                  ...new Set(collectionMaterials.map((m) => m.subject)),
+                ];
+
                 return (
                   <Card
                     key={collection}
-                    className='hover:shadow-lg transition-shadow cursor-pointer group'
+                    className="hover:shadow-lg transition-shadow cursor-pointer group"
                     onClick={() => setCurrentCollection(collection)}
                   >
-                    <CardHeader className='pb-3'>
-                      <div className='flex items-center justify-between'>
-                        <Folder className='h-8 w-8 text-blue-500 group-hover:text-blue-600' />
-                        <Badge variant='outline'>{fileCount} files</Badge>
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <Folder className="h-8 w-8 text-blue-500 group-hover:text-blue-600" />
+                        <Badge variant="outline">{fileCount} files</Badge>
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <CardTitle className='text-lg mb-2'>{collection}</CardTitle>
-                      <div className='text-sm text-gray-600 space-y-1'>
+                      <CardTitle className="text-lg mb-2">
+                        {collection}
+                      </CardTitle>
+                      <div className="text-sm text-gray-600 space-y-1">
                         <p>📁 {fileCount} materials</p>
                         {subjects.length > 0 && (
-                          <p>📚 {subjects.slice(0, 2).join(', ')}{subjects.length > 2 ? '...' : ''}</p>
+                          <p>
+                            📚 {subjects.slice(0, 2).join(", ")}
+                            {subjects.length > 2 ? "..." : ""}
+                          </p>
                         )}
                       </div>
                     </CardContent>
@@ -597,69 +798,92 @@ const StudyMaterials = () => {
         {currentCollection && (
           <>
             {/* Files Stats */}
-            <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Card>
-                <CardContent className='p-4'>
-                  <div className='text-2xl font-bold'>{filteredMaterials.length}</div>
-                  <p className='text-sm text-gray-600'>Files</p>
+                <CardContent className="p-4">
+                  <div className="text-2xl font-bold">
+                    {filteredMaterials.length}
+                  </div>
+                  <p className="text-sm text-gray-600">Files</p>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className='p-4'>
-                  <div className='text-2xl font-bold text-blue-600'>
-                    {[...new Set(filteredMaterials.map(m => m.subject))].length}
+                <CardContent className="p-4">
+                  <div className="text-2xl font-bold text-blue-600">
+                    {
+                      [...new Set(filteredMaterials.map((m) => m.subject))]
+                        .length
+                    }
                   </div>
-                  <p className='text-sm text-gray-600'>Subjects</p>
+                  <p className="text-sm text-gray-600">Subjects</p>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className='p-4'>
-                  <div className='text-2xl font-bold text-green-600'>
-                    {filteredMaterials.filter(m => m.fileType === 'pdf').length}
+                <CardContent className="p-4">
+                  <div className="text-2xl font-bold text-green-600">
+                    {
+                      filteredMaterials.filter((m) => m.fileType === "pdf")
+                        .length
+                    }
                   </div>
-                  <p className='text-sm text-gray-600'>PDF Files</p>
+                  <p className="text-sm text-gray-600">PDF Files</p>
                 </CardContent>
               </Card>
             </div>
 
             {/* Files Grid */}
-            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredMaterials.map((material) => (
                 <Card
                   key={material.id}
-                  className='hover:shadow-lg transition-shadow'
+                  className="hover:shadow-lg transition-shadow"
                 >
                   <CardHeader>
-                    <div className='flex items-start justify-between'>
-                      <div className='flex items-center space-x-2'>
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center space-x-2">
                         {getFileTypeIcon(material.fileType)}
-                        <Badge variant='outline'>
+                        <Badge variant="outline">
                           {material.fileType?.toUpperCase()}
                         </Badge>
                       </div>
                     </div>
-                    <CardTitle className='text-lg'>{material.title}</CardTitle>
+                    <CardTitle className="text-lg">{material.title}</CardTitle>
                     <CardDescription>{material.description}</CardDescription>
                   </CardHeader>
-                  <CardContent className='space-y-4'>
-                    <div className='text-sm text-gray-600'>
+                  <CardContent className="space-y-4">
+                    <div className="text-sm text-gray-600">
                       <p>📚 Subject: {material.subject}</p>
-                      <p>👨‍🏫 Uploaded by: {material.uploadedBy?.name || material.uploadedByName || '-'}</p>
+                      <p>
+                        👨‍🏫 Uploaded by:{" "}
+                        {material.uploadedBy?.name ||
+                          material.uploadedByName ||
+                          "-"}
+                      </p>
                       <p>📅 Date: {material.uploadedAt}</p>
                       <p>📁 File: {material.fileName}</p>
                     </div>
-                    <div className='flex space-x-2 mt-4'>
-                      <Button className='flex-1' onClick={() => setViewMaterial(material)}>
-                        <Eye className='h-4 w-4 mr-2' />
+                    <div className="flex space-x-2 mt-4">
+                      <Button
+                        className="flex-1"
+                        onClick={() => setViewMaterial(material)}
+                      >
+                        <Eye className="h-4 w-4 mr-2" />
                         View
                       </Button>
-                      {(user?.role === 'admin' || (user?.role === 'tutor' && (material.uploadedBy?._id === user.id || material.uploadedBy === user.id))) && (
-                        <Button variant='destructive' size='sm' onClick={() => handleDelete(material)}>
+                      {(user?.role === "admin" ||
+                        (user?.role === "tutor" &&
+                          (material.uploadedBy?._id === user.id ||
+                            material.uploadedBy === user.id))) && (
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDelete(material)}
+                        >
                           Delete
                         </Button>
                       )}
                     </div>
-                    <div className='text-xs text-gray-500 bg-gray-50 p-2 rounded'>
+                    <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
                       Content is protected from download and screenshots
                     </div>
                   </CardContent>
@@ -668,11 +892,15 @@ const StudyMaterials = () => {
             </div>
 
             {filteredMaterials.length === 0 && (
-              <div className='text-center py-12'>
-                <FolderOpen className='h-12 w-12 text-gray-400 mx-auto mb-4' />
-                <p className='text-gray-500'>No files found in this collection</p>
+              <div className="text-center py-12">
+                <FolderOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500">
+                  No files found in this collection
+                </p>
                 {searchTerm && (
-                  <p className='text-sm text-gray-400 mt-2'>Try adjusting your search terms</p>
+                  <p className="text-sm text-gray-400 mt-2">
+                    Try adjusting your search terms
+                  </p>
                 )}
               </div>
             )}
@@ -681,30 +909,30 @@ const StudyMaterials = () => {
 
         {/* Create Collection Dialog */}
         {showCreateCollection && (
-          <CreateCollectionDialog 
-            open={showCreateCollection} 
-            onClose={() => setShowCreateCollection(false)} 
-            onCreated={refreshData} 
+          <CreateCollectionDialog
+            open={showCreateCollection}
+            onClose={() => setShowCreateCollection(false)}
+            onCreated={refreshData}
           />
         )}
 
         {/* Upload Dialog */}
         {showUpload && (
-          <StudyMaterialUploadDialog 
-            open={showUpload} 
-            onClose={() => setShowUpload(false)} 
-            onUploaded={refreshData} 
-            collectionName={currentCollection || ''} 
+          <StudyMaterialUploadDialog
+            open={showUpload}
+            onClose={() => setShowUpload(false)}
+            onUploaded={refreshData}
+            collectionName={currentCollection || ""}
           />
         )}
-        
+
         {/* Viewer Dialog */}
         {viewMaterial && (
-          <StudyMaterialViewer 
-            open={!!viewMaterial} 
-            onClose={() => setViewMaterial(null)} 
-            material={viewMaterial} 
-            user={user} 
+          <StudyMaterialViewer
+            open={!!viewMaterial}
+            onClose={() => setViewMaterial(null)}
+            material={viewMaterial}
+            user={user}
           />
         )}
       </div>
