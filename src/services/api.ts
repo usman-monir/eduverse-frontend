@@ -75,6 +75,12 @@ export const getStudyMaterialById = async (id: string) => {
   return api.get(`/study-materials/${id}`);
 };
 
+export const getStudents = async () => {
+  return api.get('/admin/users', {
+    params: { role: 'student', limit: 100 },
+  });
+};
+
 export const uploadStudyMaterial = async (formData: FormData) => {
   return api.post('/study-materials', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
@@ -88,6 +94,7 @@ export const getStudyMaterialCollections = async () => {
 export const updateStudyMaterial = async (id: string, data: any) => {
   return api.put(`/study-materials/${id}`, data);
 };
+
 
 export const deleteStudyMaterial = async (id: string) => {
   return api.delete(`/study-materials/${id}`);
@@ -114,6 +121,7 @@ export const bookSession = async (sessionId: string, data: any) => {
   return api.put(`/sessions/${sessionId}/book`, data);
 };
 
+ 
 export const updateSessionStatus = async (
   sessionId: string,
   status: string
@@ -221,4 +229,70 @@ export const toggleSubjectStatus = async (id: string) => {
   return api.put(`/subjects/${id}/toggle`);
 };
 
+
+// Get availability for a specific tutor
+export const getTutorAvailability = async (tutorId: string) => {
+  return api.get(`/tutors/${tutorId}/availability`);
+};
+
+// Update availability for a specific tutor
+export const updateTutorAvailability = async (
+  tutorId: string,
+  updatedAvailability: {
+    [day: string]: { start: string; end: string };
+  }
+) => {
+  return api.put(`/tutors/${tutorId}/availability`, updatedAvailability);
+};
+
+
+export const createMeetingLink = async (data: {
+  startTime: string;
+  endTime: string;
+  tutorName: string;
+}) => {
+  const { startTime, endTime, tutorName } = data;
+
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+  const selectedDate = startTime.split("T")[0];
+  const selectedTime = new Date(startTime).toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  const localDateTimeString = new Date(startTime).toLocaleString();
+
+  const payload = {
+    summary: `1-on-1 Session with ${tutorName}`,
+    startTime,
+    endTime,
+    timeZone,
+    selectedDate,
+    selectedTime,
+    localDateTimeString,
+  };
+
+  try {
+    const res = await api.post('/create-meeting', payload);
+    return res.data.meetLink;
+  } catch (error) {
+    console.error('Error creating meeting link:', error);
+    throw error;
+  }
+};
+
+export const sendBulkInvitations = async (data: { students: { name: string; email: string; }[], slots: any[] }) => {
+  return api.post('/email/bulk-invite', data);
+};
+
+export const restrictStudentAccess = async (userId: string, accessTill: string) => {
+  return api.put(`/admin/users/${userId}/restrict-access`, { accessTill });
+};
+
+export const enableStudentAccess = async (userId: string) => {
+  return api.put(`/admin/users/${userId}/enable-access`);
+};
+
 export default api;
+
+
