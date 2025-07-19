@@ -163,7 +163,9 @@ const AdminUsers = () => {
   const handleRestrictAccess = async (userId: string) => {
     setRestrictingId(userId);
     try {
-      await restrictStudentAccess(userId, restrictDate);
+      const utcISOString = new Date(restrictDate).toISOString();
+      console.log(utcISOString)
+      await restrictStudentAccess(userId, utcISOString);
       toast({
         title: 'Access Restricted',
         description: 'Student access has been restricted.',
