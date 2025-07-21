@@ -161,13 +161,13 @@ const RequestSlot = () => {
         subject,
         date: selectedDate.toISOString().split("T")[0],
         time: selectedTime,
-        duration: "120", // 2 hours
-        description: message || "2-hour session request",
+        duration: "60",
+        description: message || "1-hour session request",
         tutorId: selectedTutorObj?._id,
       });
 
       toast({
-        title: "2-Hour Session Request Submitted!",
+        title: "1-Hour Session Request Submitted!",
         description: "Your request has been sent to the tutor for approval.",
       });
 
@@ -202,26 +202,28 @@ const RequestSlot = () => {
     <DashboardLayout>
       <div className="max-w-full mx-auto space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold mb-2">Request a 2-Hour Session</h1>
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-100">
+          <h1 className="text-3xl font-bold mb-2 text-gray-900">
+            Request a 1-Hour Session
+          </h1>
           <p className="text-gray-600">
-            Request a custom 2-hour session with your preferred tutor at your
+            Request a custom 1-hour session with your preferred tutor at your
             preferred time
           </p>
         </div>
 
         {/* Important Notice */}
-        <Card className="bg-amber-50 border-amber-200">
+        <Card className="bg-amber-50 border-amber-200 shadow-sm">
           <CardContent className="pt-6">
             <div className="flex items-start space-x-3">
-              <AlertCircle className="h-5 w-5 text-amber-500 mt-0.5" />
+              <AlertCircle className="h-5 w-5 text-amber-500 mt-0.5 flex-shrink-0" />
               <div className="space-y-2">
                 <h3 className="font-semibold text-amber-800">
                   Important Booking Rules
                 </h3>
                 <ul className="text-sm text-amber-700 space-y-1">
                   <li>
-                    • All sessions are <strong>2 hours long</strong>
+                    • All sessions are <strong>1 hour long</strong>
                   </li>
                   <li>
                     • You can book <strong>only one session per day</strong>
@@ -231,8 +233,7 @@ const RequestSlot = () => {
                     <strong>at least 12 hours in advance</strong>
                   </li>
                   <li>
-                    • Available time slots:{" "}
-                    <strong>10 AM - 3 PM (Monday to Saturday)</strong>
+                    • Available days: <strong>Monday to Saturday</strong>
                   </li>
                   <li>
                     • Tutor will approve/reject your request within 24 hours
@@ -243,211 +244,276 @@ const RequestSlot = () => {
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Form */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <User className="h-5 w-5" />
-                <span>Session Request Form</span>
-              </CardTitle>
-              <CardDescription>
-                Fill out the form below to request your 2-hour session
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Tutor Selection */}
-              <div>
-                <Label htmlFor="tutor">Select Tutor *</Label>
-                <Select value={selectedTutor} onValueChange={setSelectedTutor}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose your tutor" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {tutors.map((tutor) => (
-                      <SelectItem key={tutor.email} value={tutor.email}>
-                        {tutor.name} ({tutor.email})
-                        {tutor.experience && ` — ${tutor.experience}`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+          <div className="lg:col-span-2">
+            <Card className="shadow-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <User className="h-5 w-5 text-blue-600" />
+                  <span>Session Request Form</span>
+                </CardTitle>
+                <CardDescription>
+                  Fill out the form below to request your 1-hour session
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Tutor Selection */}
+                  <div>
+                    <Label
+                      htmlFor="tutor"
+                      className="text-sm font-medium text-gray-700"
+                    >
+                      Select Tutor *
+                    </Label>
+                    <Select
+                      value={selectedTutor}
+                      onValueChange={setSelectedTutor}
+                    >
+                      <SelectTrigger className="mt-1">
+                        <SelectValue placeholder="Choose your tutor" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {tutors.map((tutor) => (
+                          <SelectItem key={tutor.email} value={tutor.email}>
+                            {tutor.name} ({tutor.email})
+                            {tutor.experience && ` — ${tutor.experience}`}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-              {/* Subject Selection */}
-              <div>
-                <Label htmlFor="subject">Subject *</Label>
-                <Select
-                  value={subject}
-                  onValueChange={setSubject}
-                  disabled={!selectedTutor}
-                >
-                  <SelectTrigger>
-                    <SelectValue
-                      placeholder={
-                        selectedTutor
-                          ? "Select subject"
-                          : "Select a tutor first"
-                      }
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {subjects.map((subj) => (
-                      <SelectItem key={subj} value={subj}>
-                        {subj}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Time Selection */}
-              <div>
-                <Label htmlFor="time">Preferred Time *</Label>
-                <Select
-                  value={selectedTime}
-                  onValueChange={setSelectedTime}
-                  disabled={!selectedDate}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select your preferred time" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {generateAvailableTimeSlots().map((time) => (
-                      <SelectItem key={time} value={time}>
-                        {formatTime(time)} -{" "}
-                        {formatTime(
-                          (parseInt(time.split(":")[0]) + 2)
-                            .toString()
-                            .padStart(2, "0") + ":00"
-                        )}{" "}
-                        (2 hours)
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Duration Display */}
-              <div>
-                <Label>Session Duration</Label>
-                <div className="flex items-center space-x-2 p-3 bg-gray-50 border border-gray-200 rounded-md">
-                  <Clock className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm font-medium">2 hours (fixed)</span>
+                  {/* Subject Selection */}
+                  <div>
+                    <Label
+                      htmlFor="subject"
+                      className="text-sm font-medium text-gray-700"
+                    >
+                      Subject *
+                    </Label>
+                    <Select
+                      value={subject}
+                      onValueChange={setSubject}
+                      disabled={!selectedTutor}
+                    >
+                      <SelectTrigger className="mt-1">
+                        <SelectValue
+                          placeholder={
+                            selectedTutor
+                              ? "Select subject"
+                              : "Select a tutor first"
+                          }
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {subjects.map((subj) => (
+                          <SelectItem key={subj} value={subj}>
+                            {subj}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-              </div>
 
-              {/* Booking Limit Warning */}
-              {hasBookingToday && (
-                <div className="flex items-center space-x-2 p-3 bg-red-50 border border-red-200 rounded-md">
-                  <AlertCircle className="h-5 w-5 text-red-500" />
-                  <span className="text-red-700 text-sm">
-                    You already have a booking on this date. Only one session
-                    per day is allowed.
-                  </span>
+                {/* Time Selection */}
+                <div>
+                  <Label
+                    htmlFor="time"
+                    className="text-sm font-medium text-gray-700"
+                  >
+                    Select Your Preferred Time *
+                  </Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                    <div>
+                      <Label className="text-xs text-gray-500">
+                        Start Time
+                      </Label>
+                      <Select
+                        value={selectedTime}
+                        onValueChange={setSelectedTime}
+                        disabled={!selectedDate}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select start time" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {generateAvailableTimeSlots().map((time) => (
+                            <SelectItem key={time} value={time}>
+                              {formatTime(time)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-gray-500">
+                        End Time (Auto-calculated)
+                      </Label>
+                      <div className="flex items-center space-x-2 p-3 bg-gray-50 border border-gray-200 rounded-md">
+                        <Clock className="h-4 w-4 text-gray-500" />
+                        <span className="text-sm font-medium">
+                          {selectedTime
+                            ? formatTime(
+                                (parseInt(selectedTime.split(":")[0]) + 1)
+                                  .toString()
+                                  .padStart(2, "0") + ":00"
+                              )
+                            : "Select start time first"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Session duration is fixed at 1 hour
+                  </p>
                 </div>
-              )}
 
-              {/* Additional Message */}
-              <div>
-                <Label htmlFor="message">Additional Message (Optional)</Label>
-                <Textarea
-                  placeholder="Enter any specific requirements or notes for your 2-hour session..."
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  rows={3}
-                />
-              </div>
+                {/* Duration Display */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-center space-x-2">
+                    <Clock className="h-5 w-5 text-blue-600" />
+                    <div>
+                      <span className="text-sm font-semibold text-blue-900">
+                        Session Duration: 1 Hour (Fixed)
+                      </span>
+                      <p className="text-xs text-blue-700 mt-1">
+                        All sessions are exactly 60 minutes long
+                      </p>
+                    </div>
+                  </div>
+                </div>
 
-              {/* Submit Button */}
-              <Button
-                onClick={handleSubmitRequest}
-                className="w-full"
-                disabled={loading || hasBookingToday}
-              >
-                <Send className="h-4 w-4 mr-2" />
-                {loading ? "Submitting..." : "Submit 2-Hour Session Request"}
-              </Button>
-            </CardContent>
-          </Card>
+                {/* Booking Limit Warning */}
+                {hasBookingToday && (
+                  <div className="flex items-start space-x-3 p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <AlertCircle className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <span className="text-red-700 text-sm font-medium">
+                        Booking Limit Reached
+                      </span>
+                      <p className="text-red-600 text-xs mt-1">
+                        You already have a booking on this date. Only one
+                        session per day is allowed.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Additional Message */}
+                <div>
+                  <Label
+                    htmlFor="message"
+                    className="text-sm font-medium text-gray-700"
+                  >
+                    Additional Message (Optional)
+                  </Label>
+                  <Textarea
+                    placeholder="Enter any specific requirements or notes for your 1-hour session..."
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    rows={3}
+                    className="mt-1 resize-none"
+                  />
+                </div>
+
+                {/* Submit Button */}
+                <Button
+                  onClick={handleSubmitRequest}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 font-medium"
+                  disabled={loading || hasBookingToday}
+                  size="lg"
+                >
+                  <Send className="h-4 w-4 mr-2" />
+                  {loading ? "Submitting..." : "Submit 1-Hour Session Request"}
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
 
           {/* Right Column - Calendar */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <CalendarDays className="h-5 w-5" />
-                <span>Select Date</span>
-              </CardTitle>
-              <CardDescription>
-                Choose your preferred date for the 2-hour session
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={setSelectedDate}
-                className="rounded-md border"
-                disabled={(date) => {
-                  const today = new Date();
-                  today.setHours(0, 0, 0, 0);
+          <div>
+            <Card className="shadow-sm h-fit">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <CalendarDays className="h-5 w-5 text-blue-600" />
+                  <span>Select Date</span>
+                </CardTitle>
+                <CardDescription>
+                  Choose your preferred date for the 1-hour session
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-4">
+                <div className="w-full">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={setSelectedDate}
+                    className="rounded-md border w-full"
+                    disabled={(date) => {
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0);
 
-                  // Disable past dates only
-                  if (date < today) return true;
+                      // Disable past dates only
+                      if (date < today) return true;
 
-                  // Disable Sundays
-                  return date.getDay() === 0;
-                }}
-                modifiers={{
-                  hasBooking: (date) =>
-                    hasBookingToday &&
-                    selectedDate?.toDateString() === date.toDateString(),
-                }}
-                modifiersStyles={{
-                  hasBooking: {
-                    backgroundColor: "#fecaca",
-                    color: "#dc2626",
-                    fontWeight: "bold",
-                  },
-                }}
-              />
-
-              {/* Booking Status */}
-              {selectedDate && (
-                <div className="mt-4">
-                  {bookingValidationLoading ? (
-                    <div className="p-3 bg-gray-50 border border-gray-200 rounded-md">
-                      <p className="text-sm text-gray-600">
-                        Checking bookings...
-                      </p>
-                    </div>
-                  ) : hasBookingToday ? (
-                    <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-                      <p className="text-sm font-medium text-red-800 mb-1">
-                        Booking Limit Reached
-                      </p>
-                      <p className="text-xs text-red-700">
-                        You already have a session booked on this date
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="p-3 bg-green-50 border border-green-200 rounded-md">
-                      <p className="text-sm font-medium text-green-800 mb-1">
-                        Date Available
-                      </p>
-                      <p className="text-xs text-green-700">
-                        You can request a 2-hour session on this date
-                      </p>
-                    </div>
-                  )}
+                      // Disable Sundays
+                      return date.getDay() === 0;
+                    }}
+                    modifiers={{
+                      hasBooking: (date) =>
+                        hasBookingToday &&
+                        selectedDate?.toDateString() === date.toDateString(),
+                    }}
+                    modifiersStyles={{
+                      hasBooking: {
+                        backgroundColor: "#fecaca",
+                        color: "#dc2626",
+                        fontWeight: "bold",
+                      },
+                    }}
+                  />
                 </div>
-              )}
-            </CardContent>
-          </Card>
+
+                {/* Booking Status */}
+                {selectedDate && (
+                  <div className="mt-4">
+                    {bookingValidationLoading ? (
+                      <div className="p-3 bg-gray-50 border border-gray-200 rounded-md">
+                        <p className="text-sm text-gray-600">
+                          Checking bookings...
+                        </p>
+                      </div>
+                    ) : hasBookingToday ? (
+                      <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                        <p className="text-sm font-medium text-red-800 mb-1">
+                          Booking Limit Reached
+                        </p>
+                        <p className="text-xs text-red-700">
+                          You already have a session booked on this date
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="p-3 bg-green-50 border border-green-200 rounded-md">
+                        <p className="text-sm font-medium text-green-800 mb-1">
+                          Date Available
+                        </p>
+                        <p className="text-xs text-green-700">
+                          You can request a 1-hour session on this date
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         {/* Guidelines */}
-        <Card className="bg-blue-50 border-blue-200">
+        <Card className="bg-blue-50 border-blue-200 shadow-sm">
           <CardHeader>
             <CardTitle className="text-blue-800">
               <CheckCircle2 className="h-5 w-5 inline mr-2" />
@@ -455,23 +521,59 @@ const RequestSlot = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="text-blue-700">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <div>
-                <h4 className="font-semibold mb-2">Request Process:</h4>
-                <ul className="space-y-1">
-                  <li>• Fill out the form with your preferences</li>
-                  <li>• Choose any available time slot</li>
-                  <li>• Submit your 2-hour session request</li>
-                  <li>• Wait for tutor approval (within 24 hours)</li>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+              <div className="space-y-3">
+                <h4 className="font-semibold mb-2 text-blue-900">
+                  Request Process:
+                </h4>
+                <ul className="space-y-2">
+                  <li className="flex items-start space-x-2">
+                    <span className="text-blue-600 font-bold">1.</span>
+                    <span>Fill out the form with your preferences</span>
+                  </li>
+                  <li className="flex items-start space-x-2">
+                    <span className="text-blue-600 font-bold">2.</span>
+                    <span>Choose your preferred start time</span>
+                  </li>
+                  <li className="flex items-start space-x-2">
+                    <span className="text-blue-600 font-bold">3.</span>
+                    <span>Submit your 1-hour session request</span>
+                  </li>
+                  <li className="flex items-start space-x-2">
+                    <span className="text-blue-600 font-bold">4.</span>
+                    <span>Wait for tutor approval (within 24 hours)</span>
+                  </li>
                 </ul>
               </div>
-              <div>
-                <h4 className="font-semibold mb-2">Important Notes:</h4>
-                <ul className="space-y-1">
-                  <li>• Sessions are exactly 2 hours long</li>
-                  <li>• One session per day maximum</li>
-                  <li>• 12-hour advance booking required</li>
-                  <li>• No sessions on Sundays</li>
+              <div className="space-y-3">
+                <h4 className="font-semibold mb-2 text-blue-900">
+                  Important Notes:
+                </h4>
+                <ul className="space-y-2">
+                  <li className="flex items-start space-x-2">
+                    <span className="text-blue-600">•</span>
+                    <span>
+                      Sessions are exactly <strong>1 hour long</strong>
+                    </span>
+                  </li>
+                  <li className="flex items-start space-x-2">
+                    <span className="text-blue-600">•</span>
+                    <span>
+                      <strong>One session per day</strong> maximum
+                    </span>
+                  </li>
+                  <li className="flex items-start space-x-2">
+                    <span className="text-blue-600">•</span>
+                    <span>
+                      <strong>12-hour advance</strong> booking required
+                    </span>
+                  </li>
+                  <li className="flex items-start space-x-2">
+                    <span className="text-blue-600">•</span>
+                    <span>
+                      No sessions on <strong>Sundays</strong>
+                    </span>
+                  </li>
                 </ul>
               </div>
             </div>

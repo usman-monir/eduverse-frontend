@@ -77,7 +77,7 @@ const AdminManageTutorAvailability = () => {
   const fetchTutors = async () => {
     try {
       const res = await getAvailableTutors();
-      const data = await res.data.data	;
+      const data = await res.data.data;
       const tutorsData = [];
       const updatedData = data.filter((item: any) => {
         if (item.role === "tutor") {
@@ -138,7 +138,9 @@ const AdminManageTutorAvailability = () => {
 
     try {
       const res = await fetch(
-         `${import.meta.env.VITE_API_BASE_URL}/tutors/${selectedTutor._id}/availability/${day}`,
+        `${import.meta.env.VITE_API_BASE_URL}/tutors/${
+          selectedTutor._id
+        }/availability/${day}`,
         {
           method: "DELETE",
         }
@@ -159,191 +161,203 @@ const AdminManageTutorAvailability = () => {
   }, []);
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-full mx-auto p-6 space-y-6">
+      {/* Tutor Selection */}
       <Card>
         <CardHeader>
-          <CardTitle>Manage Tutor Weekly Availability</CardTitle>
+          <CardTitle>Manage Tutor Availability</CardTitle>
           <CardDescription>
-            View and update each tutor’s weekly availability
+            Select a tutor to set their weekly schedule
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {tutors.map((tutor) => (
-            <div
-              key={tutor._id}
-              className="flex items-center justify-between border p-4 rounded-lg"
-            >
-              <div>
-                <p className="font-semibold">{tutor.name}</p>
-                <p className="text-sm text-gray-500">{tutor.email}</p>
-              </div>
-              <Button
-                variant="default"
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {tutors.map((tutor) => (
+              <div
+                key={tutor._id}
+                className={`p-4 border rounded-lg cursor-pointer transition-all hover:shadow-md ${
+                  selectedTutor?._id === tutor._id
+                    ? "border-blue-500 bg-blue-50"
+                    : "border-gray-200"
+                }`}
                 onClick={() => {
                   setSelectedTutor(tutor);
                   fetchAvailability(tutor._id);
                 }}
               >
-                <Edit className="h-4 w-4 mr-2" /> Manage Availability
-              </Button>
-            </div>
-          ))}
+                <h3 className="font-semibold text-lg">{tutor.name}</h3>
+                <p className="text-gray-600 text-sm">{tutor.email}</p>
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
 
-      {/* Modal to Manage Weekly Availability */}
+      {/* Weekly Schedule Grid */}
       {selectedTutor && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-lg">
-            <h2 className="text-xl font-bold mb-4">
-              Availability for {selectedTutor.name}
-            </h2>
+        <Card>
+          <CardHeader>
+            <CardTitle>Weekly Schedule - {selectedTutor.name}</CardTitle>
+            <CardDescription>
+              Click on a day to set availability times
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
             {loading ? (
-              <p>Loading availability...</p>
+              <div className="text-center py-8">Loading schedule...</div>
             ) : (
-              <div className="space-y-4">
-                {Object.entries(availability).map(([day, time]) => (
-                  <div
-                    key={day}
-                    className="flex justify-between items-center border p-3 rounded-lg"
-                  >
-                    <span className="capitalize">
-                      {day}: {formatTime(time?.start)} - {formatTime(time?.end)}
-                    </span>
-
-                    <div className="space-x-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          setSelectedDay(day as Weekday);
-                          setTimeRange(
-                            time &&
-                              typeof time.start === "string" &&
-                              typeof time.end === "string"
-                              ? time
-                              : { start: "", end: "" }
-                          );
-                        }}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[
+                  "monday",
+                  "tuesday",
+                  "wednesday",
+                  "thursday",
+                  "friday",
+                  "saturday",
+                ].map((day) => {
+                  const dayAvailability = availability[day as Weekday];
+                  return (
+                    <div
+                      key={day}
+                      className={`p-4 border-2 rounded-lg cursor-pointer transition-all hover:shadow-md ${
+                        dayAvailability
+                          ? "border-green-300 bg-green-50"
+                          : "border-gray-200 hover:border-blue-300"
+                      }`}
+                      onClick={() => {
+                        setSelectedDay(day as Weekday);
+                        setTimeRange(dayAvailability || { start: "", end: "" });
+                      }}
+                    >
+                      <div className="text-center">
+                        <h3 className="font-semibold capitalize text-lg mb-2">
+                          {day}
+                        </h3>
+                        {dayAvailability ? (
+                          <div className="space-y-1">
+                            <div className="text-sm text-green-700 font-medium">
+                              Available
+                            </div>
+                            <div className="text-sm text-gray-600">
+                              {formatTime(dayAvailability.start)} -{" "}
+                              {formatTime(dayAvailability.end)}
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="mt-2"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteDay(day as Weekday);
+                              }}
+                            >
+                              <Trash2 className="h-3 w-3 mr-1" />
+                              Remove
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="text-gray-400">
+                            <Plus className="h-8 w-8 mx-auto mb-1" />
+                            <div className="text-sm">Click to add</div>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
-
-                {/* Buttons on the same row */}
-                <div className="flex justify-between space-x-2">
-                  <Button
-                    onClick={() => {
-                      setSelectedDay("monday");
-                      setTimeRange({ start: "", end: "" });
-                    }}
-                  >
-                    <Plus className="h-4 w-4 mr-2" /> Add Day
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    onClick={() => setSelectedTutor(null)}
-                  >
-                    <X className="h-4 w-4 mr-1" /> Close
-                  </Button>
-                </div>
+                  );
+                })}
               </div>
             )}
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       )}
 
-      {/* Add/Edit Day Dialog */}
+      {/* Time Selection Modal */}
       {selectedDay && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg w-full max-w-md">
-            <h2 className="text-lg font-semibold mb-4 capitalize">
-              {availability[selectedDay] ? "Edit" : "Add"} availability for{" "}
-              {selectedDay}
-            </h2>
-            <div className="space-y-4">
-              <div>
-                <Label>Day</Label>
-                <Select
-                  value={selectedDay}
-                  onValueChange={(val) => setSelectedDay(val as Weekday)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select Day" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {[
-                      "monday",
-                      "tuesday",
-                      "wednesday",
-                      "thursday",
-                      "friday",
-                      "saturday",
-                      "sunday",
-                    ]
-                      .filter((day) => !availability[day as Weekday])
-                      .map((day) => (
-                        <SelectItem key={day} value={day}>
-                          {day}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Start Time</Label>
-                <Select
-                  value={timeRange.start}
-                  onValueChange={(val) =>
-                    setTimeRange({ ...timeRange, start: val })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select Start Time" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {timeSlots.map(({ value, label }) => (
-                      <SelectItem key={value} value={value}>
-                        {label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>End Time</Label>
-                <Select
-                  value={timeRange.end}
-                  onValueChange={(val) =>
-                    setTimeRange({ ...timeRange, end: val })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select End Time" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(timeRange.start
-                      ? getValidEndTimes(timeRange.start)
-                      : timeSlots
-                    ) // If no start selected, show nothing or all
-                      .map(({ value, label }) => (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+            <div className="p-6">
+              <h2 className="text-xl font-bold mb-4 capitalize">
+                Set availability for {selectedDay}
+              </h2>
+
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">
+                    Start Time
+                  </Label>
+                  <Select
+                    value={timeRange.start}
+                    onValueChange={(val) =>
+                      setTimeRange({ ...timeRange, start: val, end: "" })
+                    }
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select start time" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {timeSlots.map(({ value, label }) => (
                         <SelectItem key={value} value={value}>
                           {label}
                         </SelectItem>
                       ))}
-                  </SelectContent>
-                </Select>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">
+                    End Time
+                  </Label>
+                  <Select
+                    value={timeRange.end}
+                    onValueChange={(val) =>
+                      setTimeRange({ ...timeRange, end: val })
+                    }
+                    disabled={!timeRange.start}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select end time" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(timeRange.start
+                        ? getValidEndTimes(timeRange.start)
+                        : []
+                      ).map(({ value, label }) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {timeRange.start && timeRange.end && (
+                  <div className="p-3 bg-blue-50 rounded-lg">
+                    <div className="text-sm text-blue-800">
+                      <strong>Preview:</strong> Available{" "}
+                      {formatTime(timeRange.start)} -{" "}
+                      {formatTime(timeRange.end)}
+                    </div>
+                  </div>
+                )}
               </div>
 
-              <div className="flex justify-end space-x-2">
-                <Button variant="outline" onClick={() => setSelectedDay(null)}>
-                  <X className="h-4 w-4 mr-1" /> Cancel
+              <div className="flex justify-end space-x-3 mt-6">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setSelectedDay(null);
+                    setTimeRange({ start: "", end: "" });
+                  }}
+                >
+                  Cancel
                 </Button>
-                <Button onClick={handleSaveDay}>
-                  <Save className="h-4 w-4 mr-1" /> Save
+                <Button
+                  onClick={handleSaveDay}
+                  disabled={!timeRange.start || !timeRange.end}
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Schedule
                 </Button>
               </div>
             </div>

@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { format, addHours, isAfter, isSameDay, parseISO } from "date-fns";
-import { getSessions, createSessionSlotRequest, getTutorAvailability ,bookSession, getMySessions } from "@/services/api";
+import {
+  getSessions,
+  createSessionSlotRequest,
+  getTutorAvailability,
+  bookSession,
+  getMySessions,
+} from "@/services/api";
+import axios from "axios";
 
 import { addDays } from "date-fns";
 import { isBefore } from "date-fns";
@@ -138,8 +145,6 @@ const BookSession = () => {
   const today = new Date();
   const tomorrow = new Date(today);
   tomorrow.setDate(today.getDate() + 1);
-
-  // Get available sessions for selected date
   const getAvailableSessionsForDate = (date: Date) => {
     const now = new Date();
     const targetDate = new Date(date);
@@ -153,11 +158,21 @@ const BookSession = () => {
       return [];
     }
 
+    const isToday = new Date().toDateString() === targetDate.toDateString();
+
     const availableSessions = Object.entries(tutorSessions).flatMap(
       ([tutorName, sessions]) =>
         sessions.filter((session) => {
-          const is12HoursAhead = isSessionAvailable(session.date, session.time);
-          return is12HoursAhead;
+          const isFutureTime = isAfter(
+            new Date(`${session.date}T${session.time}`),
+            now
+          );
+
+          if (isToday) {
+            return session.isTodayInviteTriggered === true && isFutureTime;
+          } else {
+            return isSessionAvailable(session.date, session.time);
+          }
         })
     );
 
@@ -245,6 +260,12 @@ const BookSession = () => {
     );
   };
 
+  const isTodaySession = (sessionDateStr: string) => {
+    const today = new Date().toDateString();
+    const sessionDate = new Date(sessionDateStr).toDateString();
+    return today === sessionDate;
+  };
+
   // Filter sessions based on current filters
   const getFilteredSessions = (sessions: any[]) => {
     return sessions.filter((session) => {
@@ -303,6 +324,37 @@ const BookSession = () => {
     (dateStr) => new Date(dateStr)
   );
 
+  const createMeetingLink = async (startTime: string, endTime: string) => {
+    try {
+      const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+      const selectedDate = startTime.split("T")[0];
+      const selectedTime = new Date(startTime).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      const localDateTimeString = new Date(startTime).toLocaleString();
+
+      const meetRes = await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL}/create-meeting`,
+        {
+          startTime,
+          endTime,
+          timeZone,
+          selectedDate,
+          selectedTime,
+          localDateTimeString,
+        }
+      );
+
+      return meetRes.data.meetLink;
+    } catch (error) {
+      console.error("Error creating meeting:", error);
+      return null;
+    }
+  };
+
+  // Handle book session
   // Handle book session
   const handleBookSession = async (sessionId: string) => {
     try {
@@ -310,11 +362,24 @@ const BookSession = () => {
       if (!sessionId || sessionId === "undefined") {
         throw new Error("Invalid session ID");
       }
-      await bookSession(sessionId, {});
+
+      const response = await bookSession(sessionId, {});
+
+      // Show success message with meeting link if available
       toast({
         title: "Class booked successfully!",
-        description: "You will receive a confirmation email shortly.",
+        description: response.data?.meetingLink
+          ? "You will receive a confirmation email shortly. Meeting link has been generated!"
+          : "You will receive a confirmation email shortly.",
       });
+
+      // Optional: You can also show the meeting link immediately
+      if (response.data?.meetingLink) {
+        console.log("Meeting link generated:", response.data.meetingLink);
+        // You could show a modal or additional toast with the meeting link
+        // Or redirect to a page that shows the booking details including the meeting link
+      }
+
       // Refresh data after booking
       await Promise.all([fetchSessions(), fetchUserBookings()]);
     } catch (err: any) {
@@ -372,14 +437,15 @@ const BookSession = () => {
           <div>
             <h1 className="text-3xl font-bold mb-2">Book a Session</h1>
             <p className="text-gray-600">
-              Click on calendar dates to see available sessions by tutor
+              Select a date and filter sessions by subject or tutor to find your
+              perfect slot
             </p>
           </div>
 
           <Link to="/request-slot">
             <Button
               size="lg"
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg"
             >
               <Plus className="h-5 w-5 mr-2" />
               Request Custom Slot
@@ -388,28 +454,31 @@ const BookSession = () => {
         </div>
 
         {/* Session Summary */}
-        <Card className="bg-green-50 border-green-200">
-          <CardContent className="p-4">
+        <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 shadow-sm">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-semibold text-green-800 mb-1">
-                  📅 Available Sessions Overview
+                <h3 className="font-bold text-green-800 mb-2 text-lg flex items-center">
+                  <CalendarIcon className="h-5 w-5 mr-2" />
+                  Available Sessions Overview
                 </h3>
-                <p className="text-green-700 text-sm">
+                <p className="text-green-700">
                   {datesWithSessions.length} days with available sessions •{" "}
                   {sessions.filter((s) => s.status === "available").length}{" "}
                   total sessions
                 </p>
               </div>
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-1">
-                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  <span className="text-sm text-green-700">Available</span>
+              <div className="flex items-center space-x-6">
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-green-500 rounded-full shadow-sm"></div>
+                  <span className="text-sm font-medium text-green-700">
+                    Available
+                  </span>
                 </div>
-                <div className="flex items-center space-x-1">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-sm text-green-700">
-                    Tutor indicator
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span className="text-sm font-medium text-green-700">
+                    Multiple Tutors
                   </span>
                 </div>
               </div>
@@ -417,43 +486,18 @@ const BookSession = () => {
           </CardContent>
         </Card>
 
-        {/* Info Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card className="bg-blue-50 border-blue-200">
-            <CardContent className="p-4">
-              <h3 className="font-semibold text-blue-800 mb-2">
-                📅 Calendar Booking
-              </h3>
-              <p className="text-blue-700 text-sm">
-                Click on calendar dates to see sessions grouped by tutor
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-purple-50 border-purple-200">
-            <CardContent className="p-4">
-              <h3 className="font-semibold text-purple-800 mb-2">
-                ⏰ Request Custom Slot
-              </h3>
-              <p className="text-purple-700 text-sm">
-                Request your preferred time with your chosen tutor
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Calendar and Filters */}
-          <div className="lg:col-span-1 space-y-6">
-            <Card>
-              <CardHeader>
+        {/* Calendar and Filters Row */}
+        <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+          {/* Calendar Section */}
+          <div className="xl:col-span-2">
+            <Card className="shadow-md">
+              <CardHeader className="pb-4">
                 <CardTitle className="flex items-center space-x-2">
-                  <CalendarIcon className="h-5 w-5" />
+                  <CalendarIcon className="h-6 w-6 text-blue-600" />
                   <span>Select Date</span>
                 </CardTitle>
                 <CardDescription>
-                  Click on dates to see available sessions. Dots indicate
-                  tutors, numbers show session count.
+                  Green dates have available sessions. Click to see details.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -461,18 +505,18 @@ const BookSession = () => {
                   mode="single"
                   selected={selectedDate}
                   onSelect={handleDateSelect}
-                  className="rounded-md border"
+                  className="rounded-lg border shadow-sm w-full"
                   modifiers={{
                     hasSessions: datesWithSessions,
                   }}
                   modifiersStyles={{
                     hasSessions: {
                       backgroundColor: "#dcfce7",
-                      borderRadius: "6px",
+                      borderRadius: "8px",
+                      fontWeight: "600",
                     },
                   }}
                   disabled={(date) => {
-                    // Disable past dates
                     const today = new Date();
                     today.setHours(0, 0, 0, 0);
                     return date < today;
@@ -481,37 +525,54 @@ const BookSession = () => {
 
                 {/* Session summary for selected date */}
                 {selectedDate && (
-                  <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                    <p className="text-sm text-blue-700">
-                      <span className="font-semibold">
-                        {getAvailableSessionsForDate(selectedDate).length}{" "}
-                        available session(s)
-                      </span>{" "}
-                      on {selectedDate.toLocaleDateString()}
-                    </p>
-                    <p className="text-xs text-blue-600 mt-1">
-                      {getTutorsForDate(selectedDate).length} tutor(s):{" "}
-                      {getTutorsForDate(selectedDate).join(", ")}
-                    </p>
+                  <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-blue-800 font-semibold">
+                          {selectedDate.toLocaleDateString("en-US", {
+                            weekday: "long",
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          })}
+                        </p>
+                        <p className="text-blue-600 text-sm mt-1">
+                          {getAvailableSessionsForDate(selectedDate).length}{" "}
+                          available sessions
+                        </p>
+                      </div>
+                      <Badge className="bg-blue-100 text-blue-800 px-3 py-1">
+                        {getTutorsForDate(selectedDate).length} tutors
+                      </Badge>
+                    </div>
                   </div>
                 )}
               </CardContent>
             </Card>
+          </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Filters</CardTitle>
+          {/* Filters Section */}
+          <div className="xl:col-span-2">
+            <Card className="shadow-md h-fit">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center space-x-2">
+                  <User className="h-6 w-6 text-purple-600" />
+                  <span>Filter Sessions</span>
+                </CardTitle>
+                <CardDescription>
+                  Narrow down sessions by subject and tutor
+                </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6">
                 <div>
-                  <label className="text-sm font-medium mb-2 block">
-                    Subject
+                  <label className="text-sm font-semibold mb-3 block text-gray-700">
+                    📚 Subject
                   </label>
                   <Select
                     value={selectedSubject}
                     onValueChange={setSelectedSubject}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="h-12 shadow-sm">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -526,14 +587,14 @@ const BookSession = () => {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium mb-2 block">
-                    Tutor
+                  <label className="text-sm font-semibold mb-3 block text-gray-700">
+                    👨‍🏫 Tutor
                   </label>
                   <Select
                     value={selectedTutor}
                     onValueChange={setSelectedTutor}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="h-12 shadow-sm">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -546,215 +607,25 @@ const BookSession = () => {
                     </SelectContent>
                   </Select>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
 
-          {/* Available Sessions */}
-          <div className="lg:col-span-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Available Sessions</CardTitle>
-                <CardDescription>
-                  {selectedDate
-                    ? `Sessions for ${selectedDate.toLocaleDateString()}`
-                    : "Click on a calendar date to view available sessions"}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {selectedDate &&
-                getAvailableSessionsForDate(selectedDate).length > 0 ? (
-                  <div className="space-y-6">
-                    {Object.entries(
-                      groupSessionsByTutor(
-                        getFilteredSessions(
-                          getAvailableSessionsForDate(selectedDate)
-                        )
-                      )
-                    ).map(([tutorName, tutorSessions]) => (
-                      <div
-                        key={tutorName}
-                        className="border rounded-lg p-4 bg-gray-50"
-                      >
-                        <h3 className="font-semibold text-lg mb-3 flex items-center">
-                          <User className="h-5 w-5 mr-2" />
-                          {tutorName}
-                          <Badge className="ml-2 bg-blue-100 text-blue-800">
-                            {tutorSessions?.length} session
-                            {tutorSessions?.length > 1 ? "s" : ""}
-                          </Badge>
-                        </h3>
-
-                        <div className="space-y-3">
-                          {tutorSessions.map((session) => {
-                            const sessionId = session.id || session._id;
-
-                            const sessionDateTime = new Date(
-                              `${session.date.split("T")[0]}T${session.time}:00`
-                            );
-                            const now = new Date();
-
-                            let hoursUntilSession: number | null = null;
-                            let isTomorrow = false;
-
-                            if (!isNaN(sessionDateTime.getTime())) {
-                              hoursUntilSession = Math.round(
-                                (sessionDateTime.getTime() - now.getTime()) /
-                                  (1000 * 60 * 60)
-                              );
-
-                              // Check if session is tomorrow
-                              const tomorrow = new Date();
-                              tomorrow.setDate(now.getDate() + 1);
-                              isTomorrow =
-                                sessionDateTime.toDateString() ===
-                                tomorrow.toDateString();
-                            }
-
-                            return (
-                              <div
-                                key={sessionId}
-                                className="bg-white border rounded-lg p-3 hover:shadow-md transition-shadow"
-                              >
-                                <div className="flex items-center justify-between">
-                                  <div className="space-y-2">
-                                    <h4 className="font-medium text-lg">
-                                      {session.subject}
-                                    </h4>
-                                    <div className="flex items-center space-x-4 text-sm text-gray-600">
-                                      <span className="flex items-center space-x-1">
-                                        <Clock className="h-4 w-4" />
-                                        <span>{formatTime(session.time)}</span>
-                                      </span>
-                                      <span>📅 {formatDate(session.date)}</span>
-                                      <span>
-                                        ⏰ {session.duration || "1 hour"}
-                                      </span>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                      {getStatusBadge(session.status)}
-                                      {hoursUntilSession !== null && (
-                                        <Badge className="bg-green-100 text-green-800">
-                                          {hoursUntilSession}h ahead
-                                        </Badge>
-                                      )}
-                                    </div>
-                                  </div>
-
-                                  {isTomorrow ? (
-                                    <Dialog>
-                                      <DialogTrigger asChild>
-                                        <Button>Book Session</Button>
-                                      </DialogTrigger>
-                                      <DialogContent>
-                                        <DialogHeader>
-                                          <DialogTitle>
-                                            Confirm Booking
-                                          </DialogTitle>
-                                          <DialogDescription>
-                                            Are you sure you want to book this
-                                            session?
-                                          </DialogDescription>
-                                        </DialogHeader>
-                                        <div className="space-y-4">
-                                          <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-                                            <h4 className="font-semibold">
-                                              {session.subject}
-                                            </h4>
-                                            <p className="text-sm text-gray-600">
-                                              Tutor:{" "}
-                                              {session.tutorName ||
-                                                session.tutor}
-                                            </p>
-                                            <p className="text-sm text-gray-600">
-                                              Date: {formatDate(session.date)}
-                                            </p>
-                                            <p className="text-sm text-gray-600">
-                                              Time: {formatTime(session.time)}
-                                            </p>
-                                            <p className="text-sm text-gray-600">
-                                              Duration:{" "}
-                                              {session.duration || "1 hour"}
-                                            </p>
-                                          </div>
-
-                                          <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
-                                            <h5 className="font-semibold text-yellow-800 mb-1">
-                                              Booking Rules:
-                                            </h5>
-                                            <ul className="text-sm text-yellow-700 space-y-1">
-                                              <li>
-                                                • One session per day maximum
-                                              </li>
-                                              <li>
-                                                • Must be booked at least 12
-                                                hours in advance
-                                              </li>
-                                              <li>
-                                                • Payment required before
-                                                session
-                                              </li>
-                                            </ul>
-                                          </div>
-
-                                          <div className="flex space-x-2">
-                                            <Button
-                                              className="flex-1"
-                                              onClick={() =>
-                                                handleBookSession(sessionId)
-                                              }
-                                            >
-                                              Confirm Booking
-                                            </Button>
-                                            <Button
-                                              variant="outline"
-                                              className="flex-1"
-                                            >
-                                              Cancel
-                                            </Button>
-                                          </div>
-                                        </div>
-                                      </DialogContent>
-                                    </Dialog>
-                                  ) : (
-                                    <p className="text-xs text-gray-500 italic">
-                                      Booking available only for sessions
-                                      scheduled tomorrow.
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-12">
-                    <CalendarIcon className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                    <p className="text-gray-500">
-                      {selectedDate
-                        ? "No available sessions for the selected date and filters."
-                        : "Click on a calendar date to view available sessions."}
+                {/* Active Filters Display */}
+                {(selectedSubject !== "all" || selectedTutor !== "all") && (
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium text-gray-600">
+                      Active Filters:
                     </p>
-                    {selectedDate && (
-                      <div className="text-sm text-gray-400 mt-2 space-y-1">
-                        <p>Possible reasons:</p>
-                        <ul className="list-disc list-inside space-y-1">
-                          <li>
-                            No sessions available for selected date/filters
-                          </li>
-                          <li>
-                            Sessions must be booked at least 12 hours in advance
-                          </li>
-                          <li>
-                            You already have a booking on the selected day
-                          </li>
-                          <li>All slots are already booked</li>
-                        </ul>
-                      </div>
-                    )}
+                    <div className="flex flex-wrap gap-2">
+                      {selectedSubject !== "all" && (
+                        <Badge className="bg-blue-100 text-blue-800">
+                          Subject: {selectedSubject}
+                        </Badge>
+                      )}
+                      {selectedTutor !== "all" && (
+                        <Badge className="bg-purple-100 text-purple-800">
+                          Tutor: {selectedTutor}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                 )}
               </CardContent>
@@ -762,126 +633,334 @@ const BookSession = () => {
           </div>
         </div>
 
-        {/* Session Details Modal */}
-        <Dialog open={showSessionModal} onOpenChange={setShowSessionModal}>
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>
-                Available Sessions - {selectedDate?.toLocaleDateString()}
-              </DialogTitle>
-              <DialogDescription>
-                Choose from available sessions grouped by tutor
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-4">
-              {Object.entries(
-                groupSessionsByTutor(getFilteredSessions(selectedDateSessions))
-              ).map(([tutorName, tutorSessions]) => (
-                <div
-                  key={tutorName}
-                  className="border rounded-lg p-4 bg-gray-50"
-                >
-                  <h3 className="font-semibold text-lg mb-3 flex items-center">
-                    <User className="h-5 w-5 mr-2" />
-                    {tutorName}
-                    <Badge className="ml-2 bg-blue-100 text-blue-800">
-                      {tutorSessions.length} session
-                      {tutorSessions.length > 1 ? "s" : ""}
-                    </Badge>
-                  </h3>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {tutorSessions.map((session) => {
-                      const sessionId = session.id || session._id;
-                      const sessionDateTime = new Date(
-                        `${session.date}T${session.time}`
-                      );
-                      const now = new Date();
-                      const tomorrow = new Date();
-                      tomorrow.setDate(now.getDate() + 1);
-
-                      const isTomorrow =
-                        sessionDateTime.toDateString() ===
-                        tomorrow.toDateString();
-
-                      const hoursUntilSession = Math.round(
-                        (sessionDateTime.getTime() - now.getTime()) /
-                          (1000 * 60 * 60)
-                      );
-
-                      return (
-                        <div
-                          key={sessionId}
-                          className="bg-white border rounded-lg p-3 hover:shadow-md transition-shadow"
-                        >
-                          <div className="space-y-2">
-                            <h4 className="font-medium">{session.subject}</h4>
-                            <div className="text-sm text-gray-600 space-y-1">
-                              <div className="flex items-center space-x-1">
-                                <Clock className="h-4 w-4" />
-                                <span>{session.time}</span>
-                              </div>
-                              <div>⏰ {session.duration || "1 hour"}</div>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              {getStatusBadge(session.status)}
-                              <Badge className="bg-green-100 text-green-800 text-xs">
-                                {hoursUntilSession}h ahead
-                              </Badge>
-                            </div>
-
-                            {isTomorrow ? (
-                              <Button
-                                size="sm"
-                                className="w-full"
-                                onClick={() => {
-                                  handleBookSession(sessionId);
-                                  setShowSessionModal(false);
-                                }}
-                              >
-                                Book Session
-                              </Button>
-                            ) : (
-                              <p className="text-xs text-gray-500 italic">
-                                Booking available only for tomorrow
-                              </p>
-                            )}
-                          </div>
+        {/* Available Sessions Full Width */}
+        <Card className="shadow-lg">
+          <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100">
+            <CardTitle className="text-2xl flex items-center space-x-3">
+              <Clock className="h-6 w-6 text-green-600" />
+              <span>Available Sessions</span>
+            </CardTitle>
+            <CardDescription className="text-lg">
+              {selectedDate
+                ? `Sessions for ${selectedDate.toLocaleDateString("en-US", {
+                    weekday: "long",
+                    month: "long",
+                    day: "numeric",
+                    year: "numeric",
+                  })}`
+                : "Select a date from the calendar to view available sessions"}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-6">
+            {selectedDate &&
+            getAvailableSessionsForDate(selectedDate).length > 0 ? (
+              <div className="space-y-8">
+                {Object.entries(
+                  groupSessionsByTutor(
+                    getFilteredSessions(
+                      getAvailableSessionsForDate(selectedDate)
+                    )
+                  )
+                ).map(([tutorName, tutorSessions]) => (
+                  <div
+                    key={tutorName}
+                    className="border-2 border-gray-100 rounded-xl p-6 bg-gradient-to-r from-white to-gray-50 hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex items-center justify-between mb-6">
+                      <h3 className="font-bold text-xl flex items-center text-gray-800">
+                        <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mr-4">
+                          <User className="h-6 w-6 text-white" />
                         </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </DialogContent>
-        </Dialog>
+                        {tutorName}
+                      </h3>
+                      <Badge className="bg-gradient-to-r from-blue-100 to-purple-100 text-blue-800 px-4 py-2 text-lg">
+                        {tutorSessions?.length} session
+                        {tutorSessions?.length > 1 ? "s" : ""}
+                      </Badge>
+                    </div>
 
-        <Card className="bg-blue-50 border-blue-200">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {tutorSessions.map((session) => {
+                        const sessionId = session.id || session._id;
+                        const sessionDateTime = new Date(
+                          `${session.date.split("T")[0]}T${session.time}:00`
+                        );
+                        const now = new Date();
+
+                        let hoursUntilSession = null;
+                        if (!isNaN(sessionDateTime.getTime())) {
+                          hoursUntilSession = Math.round(
+                            (sessionDateTime.getTime() - now.getTime()) /
+                              (1000 * 60 * 60)
+                          );
+                        }
+
+                        return (
+                          <div
+                            key={sessionId}
+                            className={`bg-white rounded-xl p-5 shadow-md hover:shadow-lg transition-all duration-200 border-l-4 ${
+                              isTodaySession(session.date)
+                                ? "border-l-red-500 bg-red-50"
+                                : "border-l-green-500"
+                            }`}
+                          >
+                            <div className="space-y-4">
+                              <div>
+                                <h4 className="font-bold text-lg text-gray-800 mb-2">
+                                  {session.subject}
+                                </h4>
+                                <div className="space-y-2">
+                                  <div className="flex items-center text-gray-600">
+                                    <Clock className="h-4 w-4 mr-2 text-green-500" />
+                                    <span className="font-medium">
+                                      {formatTime(session.time)}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center text-gray-600">
+                                    <CalendarIcon className="h-4 w-4 mr-2 text-blue-500" />
+                                    <span>{formatDate(session.date)}</span>
+                                  </div>
+                                  <div className="flex items-center text-gray-600">
+                                    <span className="mr-2">⏱️</span>
+                                    <span>{session.duration || "1 hour"}</span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="flex flex-wrap gap-2">
+                                {getStatusBadge(session.status)}
+                                {hoursUntilSession !== null && (
+                                  <Badge className="bg-green-100 text-green-800">
+                                    {hoursUntilSession}h ahead
+                                  </Badge>
+                                )}
+                                {isTodaySession(session.date) && (
+                                  <Badge className="bg-red-100 text-red-800">
+                                    Today
+                                  </Badge>
+                                )}
+                              </div>
+
+                              <div className="pt-2">
+                                {!bookedDatesSet.has(
+                                  new Date(session.date).toDateString()
+                                ) ? (
+                                  <Dialog>
+                                    <DialogTrigger asChild>
+                                      <Button className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 shadow-md">
+                                        Book Session
+                                      </Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="max-w-md">
+                                      <DialogHeader>
+                                        <DialogTitle className="text-xl">
+                                          Confirm Booking
+                                        </DialogTitle>
+                                        <DialogDescription>
+                                          Please review and confirm your session
+                                          booking
+                                        </DialogDescription>
+                                      </DialogHeader>
+
+                                      <div className="space-y-4">
+                                        <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-4 rounded-lg space-y-3">
+                                          <h4 className="font-bold text-lg">
+                                            {session.subject}
+                                          </h4>
+                                          <div className="space-y-2 text-sm">
+                                            <p className="flex items-center">
+                                              <User className="h-4 w-4 mr-2 text-blue-500" />
+                                              <span className="font-medium">
+                                                Tutor:
+                                              </span>
+                                              <span className="ml-1">
+                                                {session.tutorName ||
+                                                  session.tutor}
+                                              </span>
+                                            </p>
+                                            <p className="flex items-center">
+                                              <CalendarIcon className="h-4 w-4 mr-2 text-green-500" />
+                                              <span className="font-medium">
+                                                Date:
+                                              </span>
+                                              <span className="ml-1">
+                                                {formatDate(session.date)}
+                                              </span>
+                                            </p>
+                                            <p className="flex items-center">
+                                              <Clock className="h-4 w-4 mr-2 text-purple-500" />
+                                              <span className="font-medium">
+                                                Time:
+                                              </span>
+                                              <span className="ml-1">
+                                                {formatTime(session.time)}
+                                              </span>
+                                            </p>
+                                            <p className="flex items-center">
+                                              <span className="mr-2">⏱️</span>
+                                              <span className="font-medium">
+                                                Duration:
+                                              </span>
+                                              <span className="ml-1">
+                                                {session.duration || "1 hour"}
+                                              </span>
+                                            </p>
+                                          </div>
+                                        </div>
+
+                                        <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                                          <h5 className="font-bold text-yellow-800 mb-2">
+                                            📋 Booking Rules:
+                                          </h5>
+                                          <ul className="text-sm text-yellow-700 space-y-1">
+                                            <li>
+                                              • One session per day maximum
+                                            </li>
+                                            <li>
+                                              • Must be booked at least 12 hours
+                                              in advance
+                                            </li>
+                                            <li>
+                                              • Payment required before session
+                                            </li>
+                                          </ul>
+                                        </div>
+
+                                        <div className="flex space-x-3">
+                                          <Button
+                                            className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+                                            onClick={() =>
+                                              handleBookSession(sessionId)
+                                            }
+                                          >
+                                            Confirm Booking
+                                          </Button>
+                                          <Button
+                                            variant="outline"
+                                            className="flex-1"
+                                          >
+                                            Cancel
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    </DialogContent>
+                                  </Dialog>
+                                ) : (
+                                  <div className="text-center p-3 bg-gray-100 rounded-lg">
+                                    <p className="text-sm text-gray-600 font-medium">
+                                      ✅ Already booked for this day
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-16">
+                <div className="mb-6">
+                  <CalendarIcon className="h-20 w-20 mx-auto text-gray-300 mb-4" />
+                  <h3 className="text-xl font-semibold text-gray-600 mb-2">
+                    {selectedDate ? "No Sessions Available" : "Select a Date"}
+                  </h3>
+                  <p className="text-gray-500 text-lg">
+                    {selectedDate
+                      ? "No available sessions match your current filters."
+                      : "Click on a calendar date to view available sessions."}
+                  </p>
+                </div>
+
+                {selectedDate && (
+                  <div className="bg-gray-50 p-6 rounded-lg max-w-md mx-auto">
+                    <p className="text-sm font-medium text-gray-600 mb-3">
+                      Possible reasons:
+                    </p>
+                    <ul className="text-sm text-gray-500 space-y-2">
+                      <li className="flex items-center">
+                        <span className="w-2 h-2 bg-gray-400 rounded-full mr-3"></span>
+                        No sessions available for selected filters
+                      </li>
+                      <li className="flex items-center">
+                        <span className="w-2 h-2 bg-gray-400 rounded-full mr-3"></span>
+                        Must be booked 12+ hours in advance
+                      </li>
+                      <li className="flex items-center">
+                        <span className="w-2 h-2 bg-gray-400 rounded-full mr-3"></span>
+                        Already booked for this day
+                      </li>
+                      <li className="flex items-center">
+                        <span className="w-2 h-2 bg-gray-400 rounded-full mr-3"></span>
+                        All slots are fully booked
+                      </li>
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Guidelines Card */}
+        <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 shadow-md">
           <CardHeader>
-            <CardTitle className="text-blue-800">
-              Booking Rules & Guidelines
+            <CardTitle className="text-blue-800 flex items-center space-x-2">
+              <span>📋</span>
+              <span>Booking Rules & Guidelines</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="text-blue-700">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <div>
-                <h4 className="font-semibold mb-2">📅 Session Availability</h4>
-                <ul className="space-y-1 text-sm">
-                  <li>• Teachers available Monday-Saturday</li>
-                  <li>• Available hours: 10:00 AM - 5:00 PM</li>
-                  <li>• Each session is 1 hour long</li>
-                  <li>• Sessions grouped by tutor for easy selection</li>
+                <h4 className="font-bold mb-4 text-lg flex items-center">
+                  <CalendarIcon className="h-5 w-5 mr-2" />
+                  Session Availability
+                </h4>
+                <ul className="space-y-2">
+                  <li className="flex items-center">
+                    <span className="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
+                    <span>Teachers available Monday-Saturday</span>
+                  </li>
+                  <li className="flex items-center">
+                    <span className="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
+                    <span>Available hours: 10:00 AM - 5:00 PM</span>
+                  </li>
+                  <li className="flex items-center">
+                    <span className="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
+                    <span>Each session is 1 hour long</span>
+                  </li>
+                  <li className="flex items-center">
+                    <span className="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
+                    <span>Sessions grouped by tutor for easy selection</span>
+                  </li>
                 </ul>
               </div>
               <div>
-                <h4 className="font-semibold mb-2">⏰ Booking Constraints</h4>
-                <ul className="space-y-1 text-sm">
-                  <li>• Maximum 1 session per day per student</li>
-                  <li>• Must book at least 12 hours in advance</li>
-                  <li>• Payment required before session starts</li>
-                  <li>• Only available sessions are shown</li>
+                <h4 className="font-bold mb-4 text-lg flex items-center">
+                  <Clock className="h-5 w-5 mr-2" />
+                  Booking Constraints
+                </h4>
+                <ul className="space-y-2">
+                  <li className="flex items-center">
+                    <span className="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
+                    <span>Maximum 1 session per day per student</span>
+                  </li>
+                  <li className="flex items-center">
+                    <span className="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
+                    <span>Must book at least 12 hours in advance</span>
+                  </li>
+                  <li className="flex items-center">
+                    <span className="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
+                    <span>Payment required before session starts</span>
+                  </li>
+                  <li className="flex items-center">
+                    <span className="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
+                    <span>Only available sessions are shown</span>
+                  </li>
                 </ul>
               </div>
             </div>

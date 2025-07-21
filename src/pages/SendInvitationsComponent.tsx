@@ -141,52 +141,65 @@ useEffect(() => {
         });
 
       // ✅ Exclude all other sessions (booked/approved/pending)
-      const occupiedSet = new Set(
-        existingSessions
-          .filter((s: any) => s.status !== "available")
-          .map((s: any) => `${s.date}-${s.time}`)
-      );
+    // ❗ Block *all* existing sessions for tomorrow (even "available")
+const tomorrow = new Date();
+tomorrow.setDate(tomorrow.getDate() + 1);
+tomorrow.setHours(0, 0, 0, 0);
+
+const occupiedSet = new Set(
+  existingSessions
+    .filter((s: any) => {
+      const sessionDate = new Date(s.date);
+      sessionDate.setHours(0, 0, 0, 0);
+      return sessionDate.getTime() === tomorrow.getTime();
+    })
+    .map((s: any) => {
+      const time = s.time;
+      const date = new Date(s.date).toISOString().slice(0, 10);
+      return `${date}-${time}`;
+    })
+);
 
       // ⏳ Build slots from availability (excluding occupied ones)
-      for (let i = 1; i <= 1; i++) {
-        const date = new Date();
-        date.setDate(date.getDate() + i);
-        const dayName = date
-          .toLocaleDateString("en-US", { weekday: "long" })
-          .toLowerCase();
-        const dayAvailability = availability[dayName];
-        if (!dayAvailability) continue;
+      // for (let i = 1; i <= 1; i++) {
+      //   const date = new Date();
+      //   date.setDate(date.getDate() + i);
+      //   const dayName = date
+      //     .toLocaleDateString("en-US", { weekday: "long" })
+      //     .toLowerCase();
+      //   const dayAvailability = availability[dayName];
+      //   if (!dayAvailability) continue;
 
-        const [startHour, startMin] = dayAvailability.start
-          .split(":")
-          .map(Number);
-        const [endHour, endMin] = dayAvailability.end.split(":").map(Number);
+      //   const [startHour, startMin] = dayAvailability.start
+      //     .split(":")
+      //     .map(Number);
+      //   const [endHour, endMin] = dayAvailability.end.split(":").map(Number);
 
-        let slotTime = new Date(date);
-        slotTime.setHours(startHour, startMin, 0, 0);
+      //   let slotTime = new Date(date);
+      //   slotTime.setHours(startHour, startMin, 0, 0);
 
-        const endTime = new Date(date);
-        endTime.setHours(endHour, endMin, 0, 0);
+      //   const endTime = new Date(date);
+      //   endTime.setHours(endHour, endMin, 0, 0);
 
-        while (slotTime < endTime) {
-          const slotStr = slotTime.toTimeString().slice(0, 5);
-          const dateStr = slotTime.toISOString().slice(0, 10);
-          const key = `${dateStr}-${slotStr}`;
+      //   while (slotTime < endTime) {
+      //     const slotStr = slotTime.toTimeString().slice(0, 5);
+      //     const dateStr = slotTime.toISOString().slice(0, 10);
+      //     const key = `${dateStr}-${slotStr}`;
 
-          if (!occupiedSet.has(key)) {
-            slots.push({
-              tutorId: tutor._id,
-              tutorName: tutor.name,
-              tutorEmail: tutor.email,
-              date: dateStr,
-              time: slotStr,
-              meetingLink: "",
-            });
-          }
+      //     if (!occupiedSet.has(key)) {
+      //       slots.push({
+      //         tutorId: tutor._id,
+      //         tutorName: tutor.name,
+      //         tutorEmail: tutor.email,
+      //         date: dateStr,
+      //         time: slotStr,
+      //         meetingLink: "",
+      //       });
+      //     }
 
-          slotTime.setHours(slotTime.getHours() + 1);
-        }
-      }
+      //     slotTime.setHours(slotTime.getHours() + 1);
+      //   }
+      // }
     });
 
     // 4. Sort by date and time

@@ -27,6 +27,7 @@ import AdminUserProfile from './pages/AdminUserProfile';
 import UserProfile from './pages/UserProfile';
 import TutorSession from './pages/TutorSession';
 import SendInvitationsComponent from './pages/SendInvitationsComponent';
+import SendTodaysInvitationsComponent from './pages/SendTodaysInvitationsComponent';
 
 const queryClient = new QueryClient();
 
@@ -225,6 +226,15 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute requireRole='admin'>
             <AdminSubjects />
+          </ProtectedRoute>
+        }
+      />
+
+       <Route
+        path='/admin/send-today-invitations'
+        element={
+          <ProtectedRoute requireRole='admin'>
+            <SendTodaysInvitationsComponent/>
           </ProtectedRoute>
         }
       />

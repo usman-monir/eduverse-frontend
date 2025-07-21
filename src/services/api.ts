@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api',
-});
+}); 
 
 // Add interceptor to attach token from localStorage
 api.interceptors.request.use((config) => {
@@ -107,11 +107,11 @@ export const getSessions = async (params: any = {}) => {
 
 export const getSessionById = async (sessionId: string) => {
   return api.get(`/sessions/${sessionId}`);
-};
+}; 
 
 export const createSession = async (data: any) => {
   return api.post('/sessions', data);
-};
+}; 
 
 export const updateSession = async (sessionId: string, data: any) => {
   return api.put(`/sessions/${sessionId}`, data);
@@ -140,6 +140,10 @@ export const getAvailableTutors = async () => {
 // New Session APIs
 export const getMySessions = async (params: any = {}) => {
   return api.get('/sessions/my', { params });
+};
+
+export const cancelSessionByStudent = async (sessionId: string) => {
+  return api.put(`/sessions/${sessionId}/cancel`);
 };
 
 export const createSessionSlotRequest = async (data: any) => {
@@ -281,9 +285,18 @@ export const createMeetingLink = async (data: {
   }
 };
 
-export const sendBulkInvitations = async (data: { students: { name: string; email: string; }[], slots: any[] }) => {
+interface InvitationPayload {
+  students: { name: string; email: string }[];
+  slots: any[];
+  isToday?: boolean;
+  urgentBooking?: boolean;
+}
+
+export const sendBulkInvitations = async (data: InvitationPayload) => {
   return api.post('/email/bulk-invite', data);
 };
+
+
 
 export const restrictStudentAccess = async (userId: string, accessTill: string) => {
   return api.put(`/admin/users/${userId}/restrict-access`, { accessTill });

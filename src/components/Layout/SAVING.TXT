@@ -7,7 +7,7 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
+  SelectValue, 
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -55,28 +55,19 @@ interface SessionFormProps {
 
 const SessionForm = ({ onSubmit, onCancel, session }: SessionFormProps) => {
   const [tutors, setTutors] = useState<any[]>([]);
-  const [tutorId, setTutorId] = useState(
-    session?.tutorId || session?.tutor || ""
-  );
+  const [tutorId, setTutorId] = useState(session?.tutorId || session?.tutor || "");
   const [tutorName, setTutorName] = useState(session?.tutorName || "");
   const [availability, setAvailability] = useState<Record<
     Weekday,
     { start: string; end: string }
   > | null>(null);
+  const [availableDays, setAvailableDays] = useState<Weekday[]>([]);
   const [existingSessions, setExistingSessions] = useState<
     { date: string; time: string }[]
   >([]);
 
+  const [selectedDay, setSelectedDay] = useState<Weekday | "">(session ? (session.date ? (new Date(session.date).toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase() as Weekday) : "") : "");
   const [selectedDate, setSelectedDate] = useState(session?.date || "");
-  const [selectedDay, setSelectedDay] = useState<Weekday | "">(
-    session
-      ? session.date
-        ? (new Date(session.date)
-            .toLocaleDateString("en-US", { weekday: "long" })
-            .toLowerCase() as Weekday)
-        : ""
-      : ""
-  );
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
   const [loadingTutorData, setLoadingTutorData] = useState(false);
   const [generatingAllLinks, setGeneratingAllLinks] = useState(false);
@@ -88,13 +79,7 @@ const SessionForm = ({ onSubmit, onCancel, session }: SessionFormProps) => {
       setTutorId(session.tutorId || session.tutor || "");
       setTutorName(session.tutorName || "");
       setSelectedDate(session.date || "");
-      setSelectedDay(
-        session.date
-          ? (new Date(session.date)
-              .toLocaleDateString("en-US", { weekday: "long" })
-              .toLowerCase() as Weekday)
-          : ""
-      );
+      setSelectedDay(session.date ? (new Date(session.date).toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase() as Weekday) : "");
     }
   }, [session]);
 
@@ -132,12 +117,12 @@ const SessionForm = ({ onSubmit, onCancel, session }: SessionFormProps) => {
     fetchTutors();
   }, []);
 
-  // Generate time slots when date is selected
+  // Generate time slots when day and date are selected
   useEffect(() => {
-    if (selectedDate && availability && selectedDay) {
+    if (selectedDay && selectedDate && availability) {
       generateTimeSlots();
     }
-  }, [selectedDate, availability, selectedDay, existingSessions]);
+  }, [selectedDay, selectedDate, availability, existingSessions]); // Added existingSessions dependency
 
   const handleTutorChange = async (id: string) => {
     const tutor = tutors.find((t) => t._id === id);
@@ -150,16 +135,23 @@ const SessionForm = ({ onSubmit, onCancel, session }: SessionFormProps) => {
     setSelectedDate("");
     setTimeSlots([]);
     setAvailability(null);
+    setAvailableDays([]);
     setCreatedSessions([]); // Reset created sessions
 
     try {
       const res = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/tutors/${id}/availability`
+         `${import.meta.env.VITE_API_BASE_URL}/tutors/${id}/availability`
       );
       const data = await res.json();
 
       if (data?.availability) {
         setAvailability(data.availability);
+
+        const days = Object.keys(data.availability).filter(
+          (day) => data.availability[day]?.start && data.availability[day]?.end
+        ) as Weekday[];
+
+        setAvailableDays(days);
       }
 
       if (data?.existingSessions) {
@@ -176,29 +168,11 @@ const SessionForm = ({ onSubmit, onCancel, session }: SessionFormProps) => {
     }
   };
 
-  // New function to handle date change and determine the weekday
-  const handleDateChange = (date: string) => {
-    setSelectedDate(date);
-    setTimeSlots([]);
-    setCreatedSessions([]);
-    
-    if (date) {
-      const dateObj = new Date(date);
-      const weekday = dateObj.toLocaleDateString("en-US", { weekday: "long" }).toLowerCase() as Weekday;
-      setSelectedDay(weekday);
-    } else {
-      setSelectedDay("");
-    }
-  };
-
   const generateTimeSlots = () => {
     if (!selectedDay || !selectedDate || !availability) return;
 
     const dayAvailability = availability[selectedDay];
-    if (!dayAvailability) {
-      setTimeSlots([]);
-      return;
-    }
+    if (!dayAvailability) return;
 
     const startHour = parseInt(dayAvailability.start.split(":")[0]);
     const endHour = parseInt(dayAvailability.end.split(":")[0]);
@@ -260,6 +234,37 @@ const SessionForm = ({ onSubmit, onCancel, session }: SessionFormProps) => {
     setTimeSlots(slots);
   };
 
+  const createMeetingLink = async (startTime: string, endTime: string) => {
+    try {
+      const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+      const selectedDate = startTime.split("T")[0];
+      const selectedTime = new Date(startTime).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      const localDateTimeString = new Date(startTime).toLocaleString();
+
+      const meetRes = await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL}/create-meeting`,
+        {
+          summary: `1-on-1 Session with ${tutorName}`,
+          startTime,
+          endTime,
+          timeZone,
+          selectedDate,
+          selectedTime,
+          localDateTimeString,
+        }
+      );
+
+      return meetRes.data.meetLink;
+    } catch (error) {
+      console.error("Error creating meeting:", error);
+      return null;
+    }
+  };
+
   const handleCreateSession = async (index: number) => {
     const slot = timeSlots[index];
     if (slot.isCreated || slot.isCreating) return;
@@ -274,8 +279,18 @@ const SessionForm = ({ onSubmit, onCancel, session }: SessionFormProps) => {
       );
       const sessionEnd = new Date(sessionStart.getTime() + 60 * 60 * 1000);
 
+      const meetingLink = await createMeetingLink(
+        sessionStart.toISOString(),
+        sessionEnd.toISOString()
+      );
+
+      if (!meetingLink) {
+        throw new Error("Failed to create meeting link");
+      }
+
       const sessionData = {
         ...slot.sessionData,
+        meetingLink,
         tutorId,
       };
 
@@ -287,6 +302,7 @@ const SessionForm = ({ onSubmit, onCancel, session }: SessionFormProps) => {
       // ✅ Update the specific slot to show it's created
       updatedSlots[index] = {
         ...slot,
+        meetingLink,
         isCreated: true,
         isCreating: false,
         sessionData,
@@ -305,13 +321,13 @@ const SessionForm = ({ onSubmit, onCancel, session }: SessionFormProps) => {
   const handleCreateAllSessions = async () => {
     setGeneratingAllLinks(true);
     const newlyCreatedSessions: any[] = [];
-    const availableSlots = timeSlots.filter(slot => !slot.isCreated);
-    
+
     try {
-      // Create all sessions in parallel for faster execution
-      const sessionPromises = availableSlots.map(async (slot, originalIndex) => {
-        const index = timeSlots.findIndex(s => s === slot);
-        
+      // Create sessions sequentially to avoid race conditions
+      for (let index = 0; index < timeSlots.length; index++) {
+        const slot = timeSlots[index];
+        if (slot.isCreated) continue;
+
         const updatedSlots = [...timeSlots];
         updatedSlots[index].isCreating = true;
         setTimeSlots(updatedSlots);
@@ -321,40 +337,39 @@ const SessionForm = ({ onSubmit, onCancel, session }: SessionFormProps) => {
           const sessionStart = new Date(`${selectedDate}T${rawTime}`);
           const sessionEnd = new Date(sessionStart.getTime() + 60 * 60 * 1000);
 
+          const meetingLink = await createMeetingLink(
+            sessionStart.toISOString(),
+            sessionEnd.toISOString()
+          );
+
+          if (!meetingLink) {
+            throw new Error("Failed to create meeting link");
+          }
+
           const sessionData = {
             ...slot.sessionData,
+            meetingLink,
             tutorId,
           };
 
           await createSession(sessionData);
-          
-          return { sessionData, index };
-        } catch (error) {
-          console.error(`Error creating session for ${slot.time}:`, error);
-          return { error, index };
-        }
-      });
+          newlyCreatedSessions.push(sessionData);
 
-      // Wait for all sessions to be created
-      const results = await Promise.all(sessionPromises);
-      
-      // Process results
-      const updatedSlots = [...timeSlots];
-      results.forEach((result) => {
-        if ('sessionData' in result) {
-          newlyCreatedSessions.push(result.sessionData);
-          updatedSlots[result.index] = {
-            ...timeSlots[result.index],
+          updatedSlots[index] = {
+            ...slot,
+            meetingLink,
             isCreated: true,
             isCreating: false,
-            sessionData: result.sessionData,
+            sessionData,
           };
-        } else {
-          updatedSlots[result.index].isCreating = false;
-        }
-      });
 
-      setTimeSlots(updatedSlots);
+          setTimeSlots(updatedSlots);
+        } catch (error) {
+          console.error(`Error creating session for ${slot.time}:`, error);
+          updatedSlots[index].isCreating = false;
+          setTimeSlots(updatedSlots);
+        }
+      }
 
       // ✅ Add all newly created sessions to the array
       setCreatedSessions((prev) => [...prev, ...newlyCreatedSessions]);
@@ -366,6 +381,7 @@ const SessionForm = ({ onSubmit, onCancel, session }: SessionFormProps) => {
     }
   };
 
+  // ✅ New function to handle final submission
   // ✅ Updated function to handle final submission without API call
   const handleFinalSubmit = () => {
     if (createdSessions.length > 0) {
@@ -375,12 +391,45 @@ const SessionForm = ({ onSubmit, onCancel, session }: SessionFormProps) => {
     }
   };
 
+  const getNextAvailableDate = (dayName: string) => {
+    const today = new Date();
+    const dayIndex = [
+      "sunday",
+      "monday",
+      "tuesday",
+      "wednesday",
+      "thursday",
+      "friday",
+      "saturday",
+    ].indexOf(dayName.toLowerCase());
+
+    const todayIndex = today.getDay();
+    let daysUntilTarget = (dayIndex - todayIndex + 7) % 7;
+
+    if (daysUntilTarget === 0) {
+      daysUntilTarget = 7;
+    }
+
+    const targetDate = new Date(today);
+    targetDate.setDate(today.getDate() + daysUntilTarget);
+
+    return targetDate.toISOString().split("T")[0];
+  };
+
   const formatTime12Hour = (date: Date) => {
     return date.toLocaleTimeString([], {
       hour: "2-digit",
       minute: "2-digit",
       hour12: true,
     });
+  };
+
+  const handleDayChange = (day: Weekday) => {
+    const nextDate = getNextAvailableDate(day);
+    setSelectedDay(day);
+    setSelectedDate(nextDate);
+    setTimeSlots([]);
+    setCreatedSessions([]); // Reset created sessions when changing day
   };
 
   return (
@@ -434,8 +483,8 @@ const SessionForm = ({ onSubmit, onCancel, session }: SessionFormProps) => {
                         {weekdayLabels[day as Weekday]}
                       </span>
                       <Badge variant="outline" className="text-green-600">
-                        {formatTime12Hour(new Date(`2000-01-01T${time.start}`))}{" "}
-                        - {formatTime12Hour(new Date(`2000-01-01T${time.end}`))}
+                        {formatTime12Hour(new Date(`2000-01-01T${time.start}`))} -{" "}
+                        {formatTime12Hour(new Date(`2000-01-01T${time.end}`))}
                       </Badge>
                     </div>
                   );
@@ -445,16 +494,25 @@ const SessionForm = ({ onSubmit, onCancel, session }: SessionFormProps) => {
           </Card>
         )}
 
-        {/* Date Selection with Calendar */}
-        {availability && (
+        {/* Day Selection */}
+        {availableDays.length > 0 && (
           <div>
-            <Label>Select Date to Generate Sessions</Label>
-            <Input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => handleDateChange(e.target.value)}
-              min={new Date().toISOString().split('T')[0]} // Prevent past dates
-            />
+            <Label>Select Day to Generate Sessions</Label>
+            <Select value={selectedDay} onValueChange={handleDayChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a day" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableDays.map((day) => (
+                  <SelectItem key={day} value={day}>
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4" />
+                      {weekdayLabels[day]}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         )}
 
@@ -462,11 +520,6 @@ const SessionForm = ({ onSubmit, onCancel, session }: SessionFormProps) => {
           <p className="text-sm text-muted-foreground">
             Sessions will be created for{" "}
             <strong>{weekdayLabels[selectedDay]}</strong>, {selectedDate}
-            {availability && !availability[selectedDay] && (
-              <span className="text-red-500 ml-2">
-                (Tutor is not available on {weekdayLabels[selectedDay]}s)
-              </span>
-            )}
           </p>
         )}
 
@@ -480,8 +533,8 @@ const SessionForm = ({ onSubmit, onCancel, session }: SessionFormProps) => {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                {createdSessions.length} session(s) have been successfully
-                created and saved.
+                {createdSessions.length} session(s) have been successfully created
+                and saved.
               </p>
             </CardContent>
           </Card>
@@ -497,8 +550,7 @@ const SessionForm = ({ onSubmit, onCancel, session }: SessionFormProps) => {
               <Button
                 onClick={handleCreateAllSessions}
                 disabled={
-                  generatingAllLinks ||
-                  timeSlots.every((slot) => slot.isCreated)
+                  generatingAllLinks || timeSlots.every((slot) => slot.isCreated)
                 }
                 className="ml-auto"
               >

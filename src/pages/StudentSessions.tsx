@@ -19,7 +19,7 @@ import {
   XCircle,
   Loader2,
 } from "lucide-react";
-import { getMySessions } from "@/services/api";
+import { cancelSessionByStudent, getMySessions } from "@/services/api";
 import { ClassSession } from "@/types";
 
 const StudentSessions = () => {
@@ -49,6 +49,33 @@ const StudentSessions = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCancelSession = async (sessionId: string) => {
+    if (!window.confirm("Are you sure you want to cancel this session?"))
+      return;
+
+    try {
+      const res = await cancelSessionByStudent(sessionId);
+
+      if (res.data?.success === false) {
+        throw new Error(res.data?.message || "Failed to cancel session");
+      }
+
+      toast({
+        title: "Cancelled",
+        description: "Your session has been cancelled",
+      });
+
+      // Refetch sessions
+      fetchSessions();
+    } catch (err: any) {
+      toast({
+        title: "Error",
+        description: err.message,
+        variant: "destructive",
+      });
     }
   };
 
@@ -131,9 +158,7 @@ const StudentSessions = () => {
             {getStatusIcon(session.status)}
             <div>
               <CardTitle className="text-lg">{session.subject}</CardTitle>
-              <CardDescription>
-                with {session.tutorName}
-              </CardDescription>
+              <CardDescription>with {session.tutorName}</CardDescription>
             </div>
           </div>
           {getStatusBadge(session.status)}
@@ -164,9 +189,9 @@ const StudentSessions = () => {
           )}
         </div>
 
-        {(session.status === "booked" || session.status === "approved") &&
-          session.meetingLink && (
-            <div className="mt-4">
+        {(session.status === "booked" || session.status === "approved") && (
+          <div className="mt-4 space-y-2">
+            {session.meetingLink && (
               <Button
                 className="w-full"
                 onClick={() => window.open(session.meetingLink, "_blank")}
@@ -174,8 +199,16 @@ const StudentSessions = () => {
                 <Video className="h-4 w-4 mr-2" />
                 Join Class
               </Button>
-            </div>
-          )}
+            )}
+            <Button
+              variant="destructive"
+              className="w-full"
+              onClick={() => handleCancelSession(session._id)}
+            >
+              Cancel Session
+            </Button>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -276,18 +309,28 @@ const StudentSessions = () => {
             onClick={() => setActiveTab("past")}
             className="flex-1"
           >
-            Past 
+            Past
           </Button>
         </div>
 
         {/* Sessions List */}
         <div className="space-y-4">
           {filteredSessions.length > 0 ? (
-            activeTab === "past"
-              ? filteredSessions
-                  .sort((a, b) => new Date(`${b.date}T${b.time}`).getTime() - new Date(`${a.date}T${a.time}`).getTime())
-                  .map((session) => <SessionCard key={session.id} session={session} />)
-              : filteredSessions.map((session) => <SessionCard key={session.id} session={session} />)
+            activeTab === "past" ? (
+              filteredSessions
+                .sort(
+                  (a, b) =>
+                    new Date(`${b.date}T${b.time}`).getTime() -
+                    new Date(`${a.date}T${a.time}`).getTime()
+                )
+                .map((session) => (
+                  <SessionCard key={session.id} session={session} />
+                ))
+            ) : (
+              filteredSessions.map((session) => (
+                <SessionCard key={session.id} session={session} />
+              ))
+            )
           ) : (
             <Card>
               <CardContent className="text-center py-12">

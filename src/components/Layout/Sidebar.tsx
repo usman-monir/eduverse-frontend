@@ -59,6 +59,7 @@ const Sidebar = () => {
     { path: "/admin/subjects", label: "Subjects", icon: BookOpen },
     { path: "/admin/study-materials", label: "Study Material", icon: BookOpen },
     { path: "/send-invite", label: "Send Invite", icon: BookOpen },
+    { path: "/admin/send-today-invitations", label: "Send Today's Invites", icon: BookOpen },
     { path: "/admin/users", label: "Users", icon: Users },
     { path: "/admin/whatsapp", label: "WhatsApp", icon: MessageCircle },
   ];
