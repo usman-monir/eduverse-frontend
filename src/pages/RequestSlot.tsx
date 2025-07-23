@@ -68,43 +68,21 @@ const RequestSlot = () => {
   }, []);
 
   // Generate available time slots (10 AM to 3 PM for 2-hour sessions)
+
+  // Updated generateAvailableTimeSlots function
   const generateAvailableTimeSlots = () => {
     const slots = [];
     for (let hour = 0; hour < 24; hour++) {
-      const time = `${hour.toString().padStart(2, "0")}:00`;
-      slots.push(time);
+      // Add hour slot (e.g., 10:00)
+      const hourTime = `${hour.toString().padStart(2, "0")}:00`;
+      slots.push(hourTime);
+
+      // Add half-hour slot (e.g., 10:30)
+      const halfHourTime = `${hour.toString().padStart(2, "0")}:30`;
+      slots.push(halfHourTime);
     }
     return slots;
   };
-
-  // Check if user has booking on selected date
-  const checkUserBookingForDate = async (date) => {
-    if (!date) return false;
-
-    setBookingValidationLoading(true);
-    try {
-      const dateStr = date.toISOString().split("T")[0];
-      // Replace with your actual API endpoint
-      const response = await fetch(`/api/user/bookings?date=${dateStr}`);
-      const data = await response.json();
-
-      const hasBooking = data.bookings && data.bookings.length > 0;
-      setHasBookingToday(hasBooking);
-      return hasBooking;
-    } catch (error) {
-      console.error("Error checking user bookings:", error);
-      return false;
-    } finally {
-      setBookingValidationLoading(false);
-    }
-  };
-
-  // Check bookings when date changes
-  useEffect(() => {
-    if (selectedDate) {
-      checkUserBookingForDate(selectedDate);
-    }
-  }, [selectedDate]);
 
   // Update subjects when selectedTutor changes
   useEffect(() => {
@@ -229,11 +207,7 @@ const RequestSlot = () => {
                     • You can book <strong>only one session per day</strong>
                   </li>
                   <li>
-                    • Sessions must be booked{" "}
-                    <strong>at least 12 hours in advance</strong>
-                  </li>
-                  <li>
-                    • Available days: <strong>Monday to Saturday</strong>
+                    • Available days: <strong>Sunday to Friday</strong>
                   </li>
                   <li>
                     • Tutor will approve/reject your request within 24 hours
@@ -356,11 +330,34 @@ const RequestSlot = () => {
                         <Clock className="h-4 w-4 text-gray-500" />
                         <span className="text-sm font-medium">
                           {selectedTime
-                            ? formatTime(
-                                (parseInt(selectedTime.split(":")[0]) + 1)
+                            ? (() => {
+                                const [hours, minutes] =
+                                  selectedTime.split(":");
+                                const startHour = parseInt(hours);
+                                const startMinutes = parseInt(minutes);
+
+                                // Calculate end time (1 hour later)
+                                let endHour = startHour + 1;
+                                let endMinutes = startMinutes;
+
+                                // Handle overflow for minutes (shouldn't happen with 1 hour sessions)
+                                if (endMinutes >= 60) {
+                                  endHour += 1;
+                                  endMinutes -= 60;
+                                }
+
+                                // Handle 24-hour overflow
+                                if (endHour >= 24) {
+                                  endHour = endHour - 24;
+                                }
+
+                                const endTime = `${endHour
                                   .toString()
-                                  .padStart(2, "0") + ":00"
-                              )
+                                  .padStart(2, "0")}:${endMinutes
+                                  .toString()
+                                  .padStart(2, "0")}`;
+                                return formatTime(endTime);
+                              })()
                             : "Select start time first"}
                         </span>
                       </div>
@@ -370,7 +367,6 @@ const RequestSlot = () => {
                     Session duration is fixed at 1 hour
                   </p>
                 </div>
-
                 {/* Duration Display */}
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <div className="flex items-center space-x-2">
@@ -459,8 +455,8 @@ const RequestSlot = () => {
                       // Disable past dates only
                       if (date < today) return true;
 
-                      // Disable Sundays
-                      return date.getDay() === 0;
+                      // Disable Saturdays (day 6)
+                      return date.getDay() === 6;
                     }}
                     modifiers={{
                       hasBooking: (date) =>
@@ -562,16 +558,11 @@ const RequestSlot = () => {
                       <strong>One session per day</strong> maximum
                     </span>
                   </li>
+
                   <li className="flex items-start space-x-2">
                     <span className="text-blue-600">•</span>
                     <span>
-                      <strong>12-hour advance</strong> booking required
-                    </span>
-                  </li>
-                  <li className="flex items-start space-x-2">
-                    <span className="text-blue-600">•</span>
-                    <span>
-                      No sessions on <strong>Sundays</strong>
+                      No sessions on <strong>Saturdays</strong>
                     </span>
                   </li>
                 </ul>
