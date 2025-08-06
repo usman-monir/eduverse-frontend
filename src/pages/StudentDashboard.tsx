@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { getSessions, getStudyMaterials } from "@/services/api";
+import { getSessions, getStudyMaterials, getMySmartQuads } from "@/services/api";
 import {
   Card,
   CardContent,
@@ -22,6 +22,10 @@ import {
   CheckCircle,
   XCircle,
   Plus,
+  Users,
+  Target,
+  Globe,
+  GraduationCap,
 } from "lucide-react";
 import DashboardLayout from "@/components/Layout/DashboardLayout";
 
@@ -29,6 +33,7 @@ const StudentDashboard = () => {
   const { user } = useAuth();
   const [sessions, setSessions] = React.useState<any[]>([]);
   const [studyMaterials, setStudyMaterials] = React.useState<any[]>([]);
+  const [smartQuads, setSmartQuads] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("overview");
@@ -127,13 +132,18 @@ const StudentDashboard = () => {
       setLoading(true);
       setError(null);
       try {
-        const [sessionsRes, materialsRes] = await Promise.all([
+        const [sessionsRes, materialsRes, smartQuadsRes] = await Promise.all([
           getSessions(),
           getStudyMaterials(),
+          getMySmartQuads(),
         ]);
         const sessionsData = sessionsRes.data.data || [];
         setSessions(sessionsData);
         setStudyMaterials(materialsRes.data.data || []);
+        setSmartQuads(smartQuadsRes.data.data || []);
+        
+        console.log('Smart Quads data loaded:', smartQuadsRes.data.data); // Debug log
+        console.log('Current user:', user); // Debug log
       } catch (err: any) {
         setError(
           err.response?.data?.message || "Failed to load dashboard data"
@@ -275,6 +285,64 @@ const StudentDashboard = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Smart Quad Section */}
+        {smartQuads.length > 0 && (
+          <Card className="border-blue-200 bg-blue-50">
+            <CardHeader>
+              <CardTitle className="text-blue-800 flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                My Smart Quad Batches
+              </CardTitle>
+              <CardDescription className="text-blue-600">
+                Your group learning assignments
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {smartQuads.map((smartQuad) => (
+                    <div key={smartQuad._id || smartQuad.id} className="border border-blue-200 rounded-lg p-4 bg-white">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="font-semibold text-lg text-blue-900">{smartQuad.name}</h3>
+                          <p className="text-blue-700 text-sm mb-2">{smartQuad.description}</p>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                            <div className="flex items-center gap-1">
+                              <GraduationCap className="h-4 w-4 text-blue-600" />
+                              <span className="text-blue-700">{smartQuad.tutorName}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Globe className="h-4 w-4 text-blue-600" />
+                              <span className="text-blue-700">{smartQuad.preferredLanguage}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Target className="h-4 w-4 text-blue-600" />
+                              <span className="text-blue-700">Score: {smartQuad.desiredScore}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Users className="h-4 w-4 text-blue-600" />
+                              <span className="text-blue-700">{smartQuad.currentStudents}/{smartQuad.maxStudents}</span>
+                            </div>
+                          </div>
+                          <div className="mt-2 text-xs text-blue-600">
+                            <p>📅 Exam Deadline: {new Date(smartQuad.examDeadline).toLocaleDateString()}</p>
+                            <p>⏰ Course Expires: {new Date(smartQuad.courseExpiryDate).toLocaleDateString()}</p>
+                            <p>📚 Sessions: {smartQuad.completedSessions}/{smartQuad.totalSessions}</p>
+                          </div>
+                        </div>
+                        <Badge 
+                          variant={smartQuad.status === 'active' ? 'default' : 'secondary'}
+                          className="ml-2"
+                        >
+                          {smartQuad.status}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Next Class Section */}
         {nextClass && (

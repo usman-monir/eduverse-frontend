@@ -9,6 +9,14 @@ export interface User {
   grade?: string;
   subjects?: string[];
   accessTill?: string;
+  // Student-specific fields
+  preferredLanguage?: 'English' | 'Hindi' | 'Punjabi' | 'Nepali';
+  desiredScore?: number;
+  examDeadline?: string;
+  courseType?: 'one-on-one' | 'smart-quad';
+  courseDuration?: number;
+  totalSessions?: number;
+  courseExpiryDate?: string;
 }
 
 export interface Subject {
@@ -66,4 +74,64 @@ export interface Message {
   content: string;
   timestamp: string;
   read: boolean;
+}
+
+// Smart Quad Types
+export interface SmartQuadStudent {
+  studentId: string | { _id: string; name: string; email: string };
+  studentName: string;
+  email: string;
+  phone?: string;
+}
+
+export interface WeeklySchedule {
+  day: string;
+  time: string;
+  duration: number;
+}
+
+export interface SmartQuad {
+  id: string;
+  _id?: string;
+  name: string;
+  description?: string;
+  tutor: string | { _id: string; name: string; email: string };
+  tutorName: string;
+  students: SmartQuadStudent[];
+  maxStudents: number;
+  currentStudents: number;
+  status: 'forming' | 'active' | 'completed' | 'cancelled';
+  courseType: 'one-on-one' | 'smart-quad';
+  preferredLanguage: 'English' | 'Hindi' | 'Punjabi' | 'Nepali';
+  desiredScore: number;
+  examDeadline: string;
+  courseDuration: number;
+  totalSessions: number;
+  completedSessions: number;
+  courseExpiryDate: string;
+  weeklySchedule: WeeklySchedule[];
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Notification Types
+export interface NotificationStats {
+  expiringStudents: number;
+  activeSmartQuads: number;
+  studentsInSmartQuads: number;
+  notificationTypes: {
+    courseExpiry: string;
+    smartQuadAssignment: string;
+    smartQuadRemoval: string;
+    smartQuadCancellation: string;
+    sessionCancellation: string;
+  };
+}
+
+export interface NotificationResponse {
+  totalStudents: number;
+  notificationsSent: number;
+  notificationsFailed: number;
+  errors: any[];
 }

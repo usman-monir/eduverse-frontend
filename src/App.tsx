@@ -27,6 +27,8 @@ import AdminUserProfile from './pages/AdminUserProfile';
 import UserProfile from './pages/UserProfile';
 import TutorSession from './pages/TutorSession';
 import SendInvitationsComponent from './pages/SendInvitationsComponent';
+import AdminSmartQuad from './pages/AdminSmartQuad';
+import AdminNotifications from './pages/AdminNotifications';
 
 const queryClient = new QueryClient();
 
@@ -225,6 +227,22 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute requireRole='admin'>
             <AdminSubjects />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path='/admin/smart-quad'
+        element={
+          <ProtectedRoute requireRole='admin'>
+            <AdminSmartQuad />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path='/admin/notifications'
+        element={
+          <ProtectedRoute requireRole='admin'>
+            <AdminNotifications />
           </ProtectedRoute>
         }
       />

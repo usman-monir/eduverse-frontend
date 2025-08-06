@@ -10,6 +10,7 @@ import {
   Clock,
   MessageCircle,
   User,
+  Bell
 } from "lucide-react";
 import { Label } from "recharts";
 
@@ -58,6 +59,8 @@ const Sidebar = () => {
     { path: "/admin-dashboard", label: "Dashboard", icon: Home },
     { path: "/admin/subjects", label: "Subjects", icon: BookOpen },
     { path: "/admin/study-materials", label: "Study Material", icon: BookOpen },
+    { path: "/admin/smart-quad", label: "Smart Quad", icon: Users },
+    { path: "/admin/notifications", label: "Notifications", icon: Bell },
     { path: "/send-invite", label: "Send Invite", icon: BookOpen },
     { path: "/admin/users", label: "Users", icon: Users },
     { path: "/admin/whatsapp", label: "WhatsApp", icon: MessageCircle },

@@ -293,6 +293,64 @@ export const enableStudentAccess = async (userId: string) => {
   return api.put(`/admin/users/${userId}/enable-access`);
 };
 
+// Smart Quad APIs
+export const getSmartQuads = async (params: any = {}) => {
+  return api.get('/smart-quad', { params });
+};
+
+export const getMySmartQuads = async () => {
+  return api.get('/smart-quad/my-smart-quads');
+};
+
+export const getSmartQuadById = async (id: string) => {
+  return api.get(`/smart-quad/${id}`);
+};
+
+export const createSmartQuad = async (data: any) => {
+  return api.post('/smart-quad', data);
+};
+
+export const updateSmartQuad = async (id: string, data: any) => {
+  return api.put(`/smart-quad/${id}`, data);
+};
+
+export const deleteSmartQuad = async (id: string) => {
+  return api.delete(`/smart-quad/${id}`);
+};
+
+export const addStudentToSmartQuad = async (smartQuadId: string, studentId: string) => {
+  return api.post(`/smart-quad/${smartQuadId}/add-student`, { studentId });
+};
+
+export const removeStudentFromSmartQuad = async (smartQuadId: string, studentId: string) => {
+  return api.delete(`/smart-quad/${smartQuadId}/remove-student/${studentId}`);
+};
+
+export const getAvailableSmartQuads = async (params: any = {}) => {
+  return api.get('/smart-quad/available', { params });
+};
+
+export const getSmartQuadSessions = async (smartQuadId: string, params: any = {}) => {
+  return api.get(`/smart-quad/${smartQuadId}/sessions`, { params });
+};
+
+// Notification APIs
+export const sendCourseExpiryNotifications = async () => {
+  return api.post('/notifications/course-expiry');
+};
+
+export const sendSmartQuadAvailabilityNotifications = async (smartQuadId: string) => {
+  return api.post('/notifications/smart-quad-availability', { smartQuadId });
+};
+
+export const sendSessionCancellationNotifications = async (sessionId: string, cancellationReason: string) => {
+  return api.post('/notifications/session-cancellation', { sessionId, cancellationReason });
+};
+
+export const getNotificationStats = async () => {
+  return api.get('/notifications/stats');
+};
+
 export default api;
 
 

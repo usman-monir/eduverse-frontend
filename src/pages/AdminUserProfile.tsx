@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import DashboardLayout from '@/components/Layout/DashboardLayout';
-import { Loader2, ArrowLeft } from 'lucide-react';
+import { Loader2, ArrowLeft, Globe, Target, Calendar, Clock, Users } from 'lucide-react';
 
 const AdminUserProfile = () => {
   const { id } = useParams<{ id: string }>();
@@ -104,6 +104,56 @@ const AdminUserProfile = () => {
                   <div className='col-span-2 text-center p-2 bg-yellow-50 rounded'>
                     <div className='font-semibold text-yellow-600'>Experience: {user.experience}</div>
                   </div>
+                )}
+                
+                {/* Student-specific fields */}
+                {user.role === 'student' && (
+                  <>
+                    {user.preferredLanguage && (
+                      <div className='text-center p-2 bg-blue-50 rounded'>
+                        <div className='flex items-center justify-center gap-1'>
+                          <Globe className='h-4 w-4 text-blue-600' />
+                          <span className='font-semibold text-blue-600'>{user.preferredLanguage}</span>
+                        </div>
+                      </div>
+                    )}
+                    {user.desiredScore && (
+                      <div className='text-center p-2 bg-green-50 rounded'>
+                        <div className='flex items-center justify-center gap-1'>
+                          <Target className='h-4 w-4 text-green-600' />
+                          <span className='font-semibold text-green-600'>Target: {user.desiredScore}</span>
+                        </div>
+                      </div>
+                    )}
+                    {user.examDeadline && (
+                      <div className='text-center p-2 bg-orange-50 rounded'>
+                        <div className='flex items-center justify-center gap-1'>
+                          <Calendar className='h-4 w-4 text-orange-600' />
+                          <span className='font-semibold text-orange-600'>
+                            Exam: {new Date(user.examDeadline).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                    {user.courseType && (
+                      <div className='text-center p-2 bg-purple-50 rounded'>
+                        <div className='flex items-center justify-center gap-1'>
+                          <Users className='h-4 w-4 text-purple-600' />
+                          <span className='font-semibold text-purple-600'>{user.courseType}</span>
+                        </div>
+                      </div>
+                    )}
+                    {user.courseExpiryDate && (
+                      <div className='text-center p-2 bg-red-50 rounded'>
+                        <div className='flex items-center justify-center gap-1'>
+                          <Clock className='h-4 w-4 text-red-600' />
+                          <span className='font-semibold text-red-600'>
+                            Expires: {new Date(user.courseExpiryDate).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>
