@@ -142,14 +142,7 @@ const AdminSessions = () => {
       });
     }
 
-    // Tab-based filtering
-    if (activeTab === "my-created") {
-      filtered = filtered.filter(
-        (session) =>
-          session.createdBy?.toString() === user?._id?.toString() ||
-          session.createdBy === user?._id
-      );
-    } else if (activeTab === "slot-requests") {
+   if (activeTab === "slot-requests") {
       filtered = filtered.filter((session) => session.type === "slot_request");
     }
 
@@ -539,17 +532,6 @@ const AdminSessions = () => {
             <TabsTrigger value="all">
               All Sessions ({filteredSessions.length})
             </TabsTrigger>
-            <TabsTrigger value="my-created">
-              My Created (
-              {
-                filteredSessions.filter(
-                  (s) =>
-                    s.createdBy?.toString() === user?._id?.toString() ||
-                    s.createdBy === user?._id
-                ).length
-              }
-              )
-            </TabsTrigger>
             <TabsTrigger value="slot-requests">
               Slot Requests (
               {filteredSessions.filter((s) => s.type === "slot_request").length}
@@ -729,86 +711,6 @@ const AdminSessions = () => {
               </CardContent>
             </Card>
           </TabsContent>
-
-          <TabsContent value="my-created" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>My Created Sessions</CardTitle>
-                <CardDescription>Sessions you have created</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {filteredSessions.filter(
-                    (s) =>
-                      s.createdBy?.toString() === user?._id?.toString() ||
-                      s.createdBy === user?._id
-                  ).length > 0 ? (
-                    filteredSessions
-                      .filter(
-                        (s) =>
-                          s.createdBy?.toString() === user?._id?.toString() ||
-                          s.createdBy === user?._id
-                      )
-                      .map((session) => (
-                        <div
-                          key={session.id}
-                          className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
-                        >
-                          <div className="space-y-1">
-                            <h3 className="font-semibold">{session.subject}</h3>
-                            <div className="flex items-center space-x-4 text-sm text-gray-600">
-                              <span>📅 {session.date}</span>
-                              <span>🕐 {session.time}</span>
-                              <span>⏰ {session.duration}</span>
-                              {session.students?.length > 0 && (
-                                <div className="text-sm text-blue-600">
-                                  👨‍🎓 Students: {session.students.length}
-                                </div>
-                              )}
-                            </div>
-                            {(session.status === "approved" || session.status === "booked") && session.meetingLink && (
-                              <div className="text-sm text-blue-600 mt-1">
-                                <a
-                                  href={session.meetingLink}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="underline hover:text-blue-800"
-                                >
-                                  📎 Meeting Link
-                                </a>
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            {getStatusBadge(session.status)}
-                            {getTypeBadge(session.type)}
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setEditingSession(session)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDeleteSession(session.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))
-                  ) : (
-                    <p className="text-gray-500 text-center py-8">
-                      You haven't created any sessions yet
-                    </p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
           <TabsContent value="slot-requests" className="space-y-4">
             <Card>
               <CardHeader>

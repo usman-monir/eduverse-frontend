@@ -48,6 +48,7 @@ type Student = {
 
 
 export interface ClassSession {
+  _id?: string;
   id: string;
   subject: string;
   tutor: string;
@@ -61,8 +62,10 @@ export interface ClassSession {
   studentId?: string;
   meetingLink?: string;
   description?: string;
-  type?: 'admin_created' | 'tutor_created' | 'slot_request';
+  type?: 'admin_created' | 'tutor_created' | 'slot_request' | 'smart_quad';
   students: Student[];
+  smartQuadId?: string;
+  sessionNumber?: number;
   createdBy: string;
   createdAt: string;
   updatedAt: string;

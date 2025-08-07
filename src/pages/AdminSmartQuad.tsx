@@ -25,6 +25,7 @@ import {
   getAllTutorsWithSubjects
 } from '@/services/api';
 import { SmartQuad, User } from '@/types';
+import { Link } from 'react-router-dom';
 import { 
   Plus, 
   Users, 
@@ -40,7 +41,8 @@ import {
   BookOpen,
   Target,
   Globe,
-  GraduationCap
+  GraduationCap,
+  Play
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -776,6 +778,23 @@ const AdminSmartQuad = () => {
                     {smartQuad.students.length === 0 && (
                       <p className="text-sm text-gray-500 text-center py-4">No students assigned yet</p>
                     )}
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="border-t pt-4 mt-4">
+                  <div className="flex justify-between items-center">
+                    <div className="flex gap-2">
+                      <Link to={`/admin/smart-quad/${smartQuad._id || smartQuad.id}/sessions`}>
+                        <Button variant="outline" size="sm">
+                          <Play className="h-4 w-4 mr-1" />
+                          Manage Sessions
+                        </Button>
+                      </Link>
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {smartQuad.completedSessions}/{smartQuad.totalSessions} sessions completed
+                    </div>
                   </div>
                 </div>
               </CardContent>

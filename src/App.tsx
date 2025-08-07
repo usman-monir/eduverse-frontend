@@ -28,6 +28,7 @@ import UserProfile from './pages/UserProfile';
 import TutorSession from './pages/TutorSession';
 import SendInvitationsComponent from './pages/SendInvitationsComponent';
 import AdminSmartQuad from './pages/AdminSmartQuad';
+import AdminSmartQuadSessions from './pages/AdminSmartQuadSessions';
 import AdminNotifications from './pages/AdminNotifications';
 
 const queryClient = new QueryClient();
@@ -235,6 +236,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute requireRole='admin'>
             <AdminSmartQuad />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path='/admin/smart-quad/:id/sessions'
+        element={
+          <ProtectedRoute requireRole='admin'>
+            <AdminSmartQuadSessions />
           </ProtectedRoute>
         }
       />

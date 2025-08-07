@@ -351,6 +351,23 @@ export const getNotificationStats = async () => {
   return api.get('/notifications/stats');
 };
 
+// Smart Quad Session APIs
+export const createSmartQuadSessions = async (smartQuadId: string, data: any) => {
+  return api.post(`/smart-quad/${smartQuadId}/sessions`, data);
+};
+
+export const updateSmartQuadSession = async (smartQuadId: string, sessionId: string, data: any) => {
+  return api.put(`/smart-quad/${smartQuadId}/sessions/${sessionId}`, data);
+};
+
+export const deleteSmartQuadSessions = async (smartQuadId: string) => {
+  return api.delete(`/smart-quad/${smartQuadId}/sessions`);
+};
+
+export const completeSmartQuadSession = async (smartQuadId: string, sessionId: string) => {
+  return api.put(`/smart-quad/${smartQuadId}/sessions/${sessionId}/complete`);
+};
+
 export default api;
 
 
