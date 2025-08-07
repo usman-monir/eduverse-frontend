@@ -341,7 +341,7 @@ const StudentDashboard = () => {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => navigate(`/student-sessions?smartQuadId=${smartQuad._id || smartQuad.id}`)}
+                          onClick={() => navigate(`/smart-quad-student-sessions?smartQuadId=${smartQuad._id || smartQuad.id}`)}
                         >
                           <Calendar className="h-4 w-4 mr-1" />
                           View Sessions

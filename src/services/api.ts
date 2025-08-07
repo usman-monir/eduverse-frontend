@@ -330,6 +330,7 @@ export const getAvailableSmartQuads = async (params: any = {}) => {
   return api.get('/smart-quad/available', { params });
 };
 
+// Get sessions for a Smart Quad group (student, tutor, admin access)
 export const getSmartQuadSessions = async (smartQuadId: string, params: any = {}) => {
   return api.get(`/smart-quad/${smartQuadId}/sessions`, { params });
 };
